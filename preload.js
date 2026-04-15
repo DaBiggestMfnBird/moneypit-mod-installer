@@ -19,4 +19,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onUpdateAvailable:  (cb) => ipcRenderer.on('update-available',  (_e, d) => cb(d)),
   onUpdateProgress:   (cb) => ipcRenderer.on('update-progress',   (_e, d) => cb(d)),
   onUpdateDownloaded: (cb) => ipcRenderer.on('update-downloaded',  ()      => cb()),
+
+  // Mod scraping
+  fetchTopMods: (source) => ipcRenderer.invoke('fetch-top-mods', source),
+  searchMods:   (query)  => ipcRenderer.invoke('search-mods', query),
 });

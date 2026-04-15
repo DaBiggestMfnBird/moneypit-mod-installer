@@ -5,6 +5,8 @@ const fs                                       = require('fs-extra');
 const axios                                    = require('axios');
 const extractZip                               = require('extract-zip');
 const { URL }                                  = require('url');
+const crypto                                   = require('crypto');
+const { ModScraper }                           = require('./src/scraper/mod-scraper');
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const MAX_DOWNLOAD_BYTES = 500 * 1024 * 1024;
@@ -82,12 +84,17 @@ function createWindow() {
 }
 
 // ── App lifecycle ─────────────────────────────────────────────────────────────
+// ── Mod Scraper ──────────────────────────────────────────────────────────────
+let modScraper = null;
+
 app.whenReady().then(() => {
   // #6: correct Windows taskbar identity
   if (process.platform === 'win32') {
     app.setAppUserModelId('com.moneypit.modinstaller');
   }
   initLogger();
+  modScraper = new ModScraper(app);
+  log('✓ ModScraper initialized');
   createSplash();
   createWindow();
 });
@@ -170,6 +177,31 @@ function sanitizeModName(raw) {
   return raw.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80) || 'moneypit-mod';
 }
 
+// Parse optional #sha256=<64-hex> fragment for integrity check
+function extractExpectedHash(rawUrl) {
+  try {
+    const frag = new URL(rawUrl).hash.replace(/^#/, '');
+    const m = frag.split('&').map(s => s.split('=')).find(([k]) => k === 'sha256');
+    if (!m) return null;
+    const hex = (m[1] || '').toLowerCase();
+    if (!/^[a-f0-9]{64}$/.test(hex)) throw new Error('Malformed sha256 hash — must be 64 hex chars.');
+    return hex;
+  } catch (e) {
+    if (e.message.startsWith('Malformed')) throw e;
+    return null;
+  }
+}
+
+async function hashFile(filePath) {
+  return new Promise((resolve, reject) => {
+    const h = crypto.createHash('sha256');
+    fs.createReadStream(filePath)
+      .on('data', c => h.update(c))
+      .on('end',  () => resolve(h.digest('hex')))
+      .on('error', reject);
+  });
+}
+
 function extractModName(url) {
   try {
     const parts = new URL(url).pathname.split('/').filter(p => p);
@@ -192,15 +224,17 @@ async function downloadFile(url, dest, onProgress) {
   if (total > MAX_DOWNLOAD_BYTES) { response.data.destroy(); throw new Error('File exceeds the 500 MB size limit.'); }
 
   let downloaded = 0;
+  const hash = crypto.createHash('sha256');
   return new Promise((resolve, reject) => {
     const writer = fs.createWriteStream(dest);
     response.data.on('data', chunk => {
       downloaded += chunk.length;
       if (downloaded > MAX_DOWNLOAD_BYTES) { writer.destroy(); response.data.destroy(); reject(new Error('File exceeded 500 MB limit.')); return; }
+      hash.update(chunk);
       if (total > 0 && onProgress) onProgress((downloaded / total) * 100);
     });
     response.data.pipe(writer);
-    writer.on('finish', resolve);
+    writer.on('finish', () => resolve(hash.digest('hex')));
     writer.on('error',  reject);
     response.data.on('error', reject);
   });
@@ -241,6 +275,7 @@ ipcMain.handle('install-mod', async (event, { url, modsFolder }) => {
   let tmp = null;
   try {
     validateUrl(url);
+    const expectedHash = extractExpectedHash(url);
     const name = extractModName(url);
     log(`URL install: ${url} → ${modsFolder}`);
     tmp = path.join(app.getPath('temp'), 'moneypit', Date.now() + '-' + name);
@@ -248,7 +283,11 @@ ipcMain.handle('install-mod', async (event, { url, modsFolder }) => {
 
     event.sender.send('install-progress', { status: 'downloading', progress: 0 });
     const zip = path.join(tmp, 'mod.zip');
-    await downloadFile(url, zip, p => event.sender.send('install-progress', { status: 'downloading', progress: p }));
+    const actualHash = await downloadFile(url, zip, p => event.sender.send('install-progress', { status: 'downloading', progress: p }));
+    log(`SHA256: ${actualHash}`);
+    if (expectedHash && expectedHash !== actualHash) {
+      throw new Error(`Checksum mismatch. Expected ${expectedHash}, got ${actualHash}. File may be corrupt or tampered.`);
+    }
 
     event.sender.send('install-progress', { status: 'extracting', progress: 50 });
     const ext = path.join(tmp, 'extracted');
@@ -278,6 +317,7 @@ ipcMain.handle('install-mod-file', async (event, { filePath, modsFolder }) => {
 
     const name = sanitizeModName(path.basename(resolved, '.zip'));
     log(`File install: ${resolved} → ${modsFolder}`);
+    log(`SHA256: ${await hashFile(resolved)}`);
     tmp = path.join(app.getPath('temp'), 'moneypit', Date.now() + '-' + name);
     await fs.ensureDir(tmp); await fs.ensureDir(modsFolder);
 
@@ -303,4 +343,32 @@ ipcMain.handle('get-default-mods-folder', () => getBeamNGModsFolder());
 ipcMain.handle('validate-mods-folder', async (event, folderPath) => {
   try { return { valid: await fs.pathExists(folderPath), exists: true }; }
   catch { return { valid: false, exists: false }; }
+});
+
+// ── Mod Scraping ──────────────────────────────────────────────────────────────
+ipcMain.handle('fetch-top-mods', async (event, source = 'beamng') => {
+  try {
+    const allowedSources = ['beamng', 'worldofmods', 'modland'];
+    if (!allowedSources.includes(source)) {
+      throw new Error('Invalid mod source');
+    }
+    const result = await modScraper.fetchTopMods(source, 15);
+    return { success: true, ...result };
+  } catch (err) {
+    logError('Top mods fetch failed', err);
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('search-mods', async (event, query) => {
+  try {
+    if (!query || query.length < 2) {
+      throw new Error('Search query too short');
+    }
+    // For now, just return empty array - could implement search
+    return { success: true, mods: [] };
+  } catch (err) {
+    logError('Mod search failed', err);
+    return { success: false, error: err.message };
+  }
 });

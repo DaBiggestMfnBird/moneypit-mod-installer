@@ -123,3 +123,39 @@ describe('MAX_DOWNLOAD_BYTES', () => {
   test('499 MB is under cap', () => expect(499 * 1024 * 1024).toBeLessThan(MAX_DOWNLOAD_BYTES));
   test('501 MB exceeds cap', () => expect(501 * 1024 * 1024).toBeGreaterThan(MAX_DOWNLOAD_BYTES));
 });
+
+// ── SHA256 integrity ─────────────────────────────────────────────────────────
+function extractExpectedHash(rawUrl) {
+  try {
+    const frag = new URL(rawUrl).hash.replace(/^#/, '');
+    const m = frag.split('&').map(s => s.split('=')).find(([k]) => k === 'sha256');
+    if (!m) return null;
+    const hex = (m[1] || '').toLowerCase();
+    if (!/^[a-f0-9]{64}$/.test(hex)) throw new Error('Malformed sha256 hash — must be 64 hex chars.');
+    return hex;
+  } catch (e) {
+    if (e.message.startsWith('Malformed')) throw e;
+    return null;
+  }
+}
+
+describe('extractExpectedHash — SHA256 fragment parsing', () => {
+  const valid = 'a'.repeat(64);
+
+  test('returns null when no fragment', () =>
+    expect(extractExpectedHash('https://beamng.com/mod.zip')).toBeNull());
+  test('returns null when fragment lacks sha256', () =>
+    expect(extractExpectedHash('https://beamng.com/mod.zip#foo=bar')).toBeNull());
+  test('parses valid 64-char hex hash', () =>
+    expect(extractExpectedHash(`https://beamng.com/mod.zip#sha256=${valid}`)).toBe(valid));
+  test('lowercases uppercase hash', () =>
+    expect(extractExpectedHash(`https://beamng.com/mod.zip#sha256=${valid.toUpperCase()}`)).toBe(valid));
+  test('parses hash alongside other fragment params', () =>
+    expect(extractExpectedHash(`https://beamng.com/mod.zip#v=1&sha256=${valid}`)).toBe(valid));
+  test('rejects hash that is too short', () =>
+    expect(() => extractExpectedHash('https://beamng.com/mod.zip#sha256=abc123')).toThrow(/Malformed/));
+  test('rejects hash with non-hex chars', () =>
+    expect(() => extractExpectedHash(`https://beamng.com/mod.zip#sha256=${'z'.repeat(64)}`)).toThrow(/Malformed/));
+  test('rejects empty hash value', () =>
+    expect(() => extractExpectedHash('https://beamng.com/mod.zip#sha256=')).toThrow(/Malformed/));
+});

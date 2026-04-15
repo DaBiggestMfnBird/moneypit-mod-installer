@@ -1,0 +1,886 @@
+[
+  {
+    "id": "eagle",
+    "name": "Bald Eagle",
+    "emoji": "🦅",
+    "category": "bird",
+    "canFly": true,
+    "width": 24,
+    "height": 24,
+    "color": "#8B4513",
+    "personality": "majestic, alert, commanding",
+    "behavior": {
+      "defaultSpeed": 1.2,
+      "flySpeed": 2.5,
+      "idleWanderRange": 120,
+      "fidgetChance": 0.3
+    }
+  },
+  {
+    "id": "raven",
+    "name": "Raven",
+    "emoji": "🐦",
+    "category": "bird",
+    "canFly": true,
+    "width": 20,
+    "height": 20,
+    "color": "#1a1a1a",
+    "personality": "mysterious, curious, mischievous",
+    "behavior": {
+      "defaultSpeed": 1.4,
+      "flySpeed": 2.8,
+      "idleWanderRange": 100,
+      "fidgetChance": 0.6
+    }
+  },
+  {
+    "id": "sparrow",
+    "name": "Sparrow",
+    "emoji": "🐦‍⬛",
+    "category": "bird",
+    "canFly": true,
+    "width": 16,
+    "height": 16,
+    "color": "#8B7355",
+    "personality": "cheerful, energetic, quick",
+    "behavior": {
+      "defaultSpeed": 1.8,
+      "flySpeed": 3.2,
+      "idleWanderRange": 80,
+      "fidgetChance": 0.8
+    }
+  },
+  {
+    "id": "hummingbird",
+    "name": "Hummingbird",
+    "emoji": "🕊️",
+    "category": "bird",
+    "canFly": true,
+    "width": 12,
+    "height": 12,
+    "color": "#FF69B4",
+    "personality": "graceful, delicate, peaceful",
+    "behavior": {
+      "defaultSpeed": 2.0,
+      "flySpeed": 3.5,
+      "idleWanderRange": 60,
+      "fidgetChance": 0.9
+    }
+  },
+  {
+    "id": "owl",
+    "name": "Wise Owl",
+    "emoji": "🦉",
+    "category": "bird",
+    "canFly": true,
+    "width": 22,
+    "height": 22,
+    "color": "#654321",
+    "personality": "wise, observant, nocturnal",
+    "behavior": {
+      "defaultSpeed": 0.9,
+      "flySpeed": 2.2,
+      "idleWanderRange": 100,
+      "fidgetChance": 0.2
+    }
+  },
+  {
+    "id": "phoenix",
+    "name": "Phoenix",
+    "emoji": "🔥",
+    "category": "mythical",
+    "canFly": true,
+    "width": 28,
+    "height": 28,
+    "color": "#FF4500",
+    "personality": "fiery, legendary, resilient",
+    "behavior": {
+      "defaultSpeed": 1.5,
+      "flySpeed": 3.0,
+      "idleWanderRange": 140,
+      "fidgetChance": 0.5
+    }
+  },
+  {
+    "id": "dragon",
+    "name": "Dragon",
+    "emoji": "🐉",
+    "category": "mythical",
+    "canFly": true,
+    "width": 32,
+    "height": 32,
+    "color": "#228B22",
+    "personality": "powerful, proud, ancient",
+    "behavior": {
+      "defaultSpeed": 1.0,
+      "flySpeed": 2.3,
+      "idleWanderRange": 150,
+      "fidgetChance": 0.25
+    }
+  },
+  {
+    "id": "cat",
+    "name": "Tabby Cat",
+    "emoji": "🐱",
+    "category": "mammal",
+    "canFly": false,
+    "width": 20,
+    "height": 20,
+    "color": "#FF8C00",
+    "personality": "curious, independent, playful",
+    "behavior": {
+      "defaultSpeed": 1.1,
+      "flySpeed": 0,
+      "idleWanderRange": 90,
+      "fidgetChance": 0.7
+    }
+  },
+  {
+    "id": "tiger",
+    "name": "Tiger",
+    "emoji": "🐯",
+    "category": "mammal",
+    "canFly": false,
+    "width": 28,
+    "height": 24,
+    "color": "#FF6347",
+    "personality": "fierce, bold, confident",
+    "behavior": {
+      "defaultSpeed": 1.3,
+      "flySpeed": 0,
+      "idleWanderRange": 110,
+      "fidgetChance": 0.4
+    }
+  },
+  {
+    "id": "lion",
+    "name": "Lion",
+    "emoji": "🦁",
+    "category": "mammal",
+    "canFly": false,
+    "width": 26,
+    "height": 24,
+    "color": "#DAA520",
+    "personality": "regal, proud, majestic",
+    "behavior": {
+      "defaultSpeed": 0.9,
+      "flySpeed": 0,
+      "idleWanderRange": 100,
+      "fidgetChance": 0.3
+    }
+  },
+  {
+    "id": "wolf",
+    "name": "Wolf",
+    "emoji": "🐺",
+    "category": "mammal",
+    "canFly": false,
+    "width": 24,
+    "height": 20,
+    "color": "#696969",
+    "personality": "wild, loyal, mysterious",
+    "behavior": {
+      "defaultSpeed": 1.5,
+      "flySpeed": 0,
+      "idleWanderRange": 120,
+      "fidgetChance": 0.5
+    }
+  },
+  {
+    "id": "fox",
+    "name": "Red Fox",
+    "emoji": "🦊",
+    "category": "mammal",
+    "canFly": false,
+    "width": 22,
+    "height": 20,
+    "color": "#DC143C",
+    "personality": "cunning, clever, agile",
+    "behavior": {
+      "defaultSpeed": 1.6,
+      "flySpeed": 0,
+      "idleWanderRange": 110,
+      "fidgetChance": 0.6
+    }
+  },
+  {
+    "id": "bear",
+    "name": "Grizzly Bear",
+    "emoji": "🐻",
+    "category": "mammal",
+    "canFly": false,
+    "width": 28,
+    "height": 26,
+    "color": "#8B4513",
+    "personality": "strong, protective, calm",
+    "behavior": {
+      "defaultSpeed": 0.8,
+      "flySpeed": 0,
+      "idleWanderRange": 100,
+      "fidgetChance": 0.2
+    }
+  },
+  {
+    "id": "panda",
+    "name": "Giant Panda",
+    "emoji": "🐼",
+    "category": "mammal",
+    "canFly": false,
+    "width": 22,
+    "height": 22,
+    "color": "#000000",
+    "personality": "gentle, peaceful, lazy",
+    "behavior": {
+      "defaultSpeed": 0.6,
+      "flySpeed": 0,
+      "idleWanderRange": 70,
+      "fidgetChance": 0.1
+    }
+  },
+  {
+    "id": "rabbit",
+    "name": "Rabbit",
+    "emoji": "🐰",
+    "category": "mammal",
+    "canFly": false,
+    "width": 18,
+    "height": 20,
+    "color": "#FFF8DC",
+    "personality": "quick, timid, energetic",
+    "behavior": {
+      "defaultSpeed": 2.0,
+      "flySpeed": 0,
+      "idleWanderRange": 95,
+      "fidgetChance": 0.8
+    }
+  },
+  {
+    "id": "fox_silver",
+    "name": "Silver Fox",
+    "emoji": "🦊",
+    "category": "mammal",
+    "canFly": false,
+    "width": 22,
+    "height": 20,
+    "color": "#C0C0C0",
+    "personality": "sly, elegant, tactical",
+    "behavior": {
+      "defaultSpeed": 1.4,
+      "flySpeed": 0,
+      "idleWanderRange": 105,
+      "fidgetChance": 0.5
+    }
+  },
+  {
+    "id": "sloth",
+    "name": "Sloth",
+    "emoji": "🦥",
+    "category": "mammal",
+    "canFly": false,
+    "width": 20,
+    "height": 24,
+    "color": "#8B7D6B",
+    "personality": "relaxed, slow, chill",
+    "behavior": {
+      "defaultSpeed": 0.3,
+      "flySpeed": 0,
+      "idleWanderRange": 40,
+      "fidgetChance": 0.05
+    }
+  },
+  {
+    "id": "monkey",
+    "name": "Monkey",
+    "emoji": "🐵",
+    "category": "mammal",
+    "canFly": false,
+    "width": 18,
+    "height": 22,
+    "color": "#8B6914",
+    "personality": "playful, mischievous, social",
+    "behavior": {
+      "defaultSpeed": 1.7,
+      "flySpeed": 0,
+      "idleWanderRange": 100,
+      "fidgetChance": 0.75
+    }
+  },
+  {
+    "id": "penguin",
+    "name": "Penguin",
+    "emoji": "🐧",
+    "category": "bird",
+    "canFly": false,
+    "width": 16,
+    "height": 24,
+    "color": "#000000",
+    "personality": "cute, waddly, social",
+    "behavior": {
+      "defaultSpeed": 0.9,
+      "flySpeed": 0,
+      "idleWanderRange": 80,
+      "fidgetChance": 0.4
+    }
+  },
+  {
+    "id": "dolphin",
+    "name": "Dolphin",
+    "emoji": "🐬",
+    "category": "aquatic",
+    "canFly": false,
+    "width": 24,
+    "height": 18,
+    "color": "#4169E1",
+    "personality": "intelligent, playful, social",
+    "behavior": {
+      "defaultSpeed": 1.8,
+      "flySpeed": 0,
+      "idleWanderRange": 130,
+      "fidgetChance": 0.7
+    }
+  },
+  {
+    "id": "shark",
+    "name": "Great White Shark",
+    "emoji": "🦈",
+    "category": "aquatic",
+    "canFly": false,
+    "width": 28,
+    "height": 16,
+    "color": "#696969",
+    "personality": "powerful, predatory, fast",
+    "behavior": {
+      "defaultSpeed": 2.0,
+      "flySpeed": 0,
+      "idleWanderRange": 140,
+      "fidgetChance": 0.35
+    }
+  },
+  {
+    "id": "octopus",
+    "name": "Octopus",
+    "emoji": "🐙",
+    "category": "aquatic",
+    "canFly": false,
+    "width": 22,
+    "height": 22,
+    "color": "#FF1493",
+    "personality": "intelligent, flexible, mysterious",
+    "behavior": {
+      "defaultSpeed": 1.2,
+      "flySpeed": 0,
+      "idleWanderRange": 110,
+      "fidgetChance": 0.5
+    }
+  },
+  {
+    "id": "turtle",
+    "name": "Sea Turtle",
+    "emoji": "🐢",
+    "category": "aquatic",
+    "canFly": false,
+    "width": 20,
+    "height": 18,
+    "color": "#228B22",
+    "personality": "wise, slow, patient",
+    "behavior": {
+      "defaultSpeed": 0.5,
+      "flySpeed": 0,
+      "idleWanderRange": 60,
+      "fidgetChance": 0.1
+    }
+  },
+  {
+    "id": "unicorn",
+    "name": "Unicorn",
+    "emoji": "🦄",
+    "category": "mythical",
+    "canFly": false,
+    "width": 24,
+    "height": 22,
+    "color": "#FFB6C1",
+    "personality": "magical, rare, enchanting",
+    "behavior": {
+      "defaultSpeed": 1.6,
+      "flySpeed": 0,
+      "idleWanderRange": 120,
+      "fidgetChance": 0.65
+    }
+  },
+  {
+    "id": "pegasus",
+    "name": "Pegasus",
+    "emoji": "🐴",
+    "category": "mythical",
+    "canFly": true,
+    "width": 26,
+    "height": 24,
+    "color": "#FFFFFF",
+    "personality": "majestic, free, noble",
+    "behavior": {
+      "defaultSpeed": 1.4,
+      "flySpeed": 2.9,
+      "idleWanderRange": 140,
+      "fidgetChance": 0.4
+    }
+  },
+  {
+    "id": "phoenix_dark",
+    "name": "Dark Phoenix",
+    "emoji": "🔥",
+    "category": "mythical",
+    "canFly": true,
+    "width": 28,
+    "height": 28,
+    "color": "#8B0000",
+    "personality": "ominous, powerful, rebirth",
+    "behavior": {
+      "defaultSpeed": 1.5,
+      "flySpeed": 3.0,
+      "idleWanderRange": 140,
+      "fidgetChance": 0.45
+    }
+  },
+  {
+    "id": "leopard",
+    "name": "Leopard",
+    "emoji": "🐆",
+    "category": "mammal",
+    "canFly": false,
+    "width": 26,
+    "height": 20,
+    "color": "#FFD700",
+    "personality": "stealthy, agile, spotty",
+    "behavior": {
+      "defaultSpeed": 1.7,
+      "flySpeed": 0,
+      "idleWanderRange": 115,
+      "fidgetChance": 0.55
+    }
+  },
+  {
+    "id": "zebra",
+    "name": "Zebra",
+    "emoji": "🦓",
+    "category": "mammal",
+    "canFly": false,
+    "width": 24,
+    "height": 22,
+    "color": "#FFFFFF",
+    "personality": "striped, social, vigilant",
+    "behavior": {
+      "defaultSpeed": 1.5,
+      "flySpeed": 0,
+      "idleWanderRange": 120,
+      "fidgetChance": 0.45
+    }
+  },
+  {
+    "id": "giraffe",
+    "name": "Giraffe",
+    "emoji": "🦒",
+    "category": "mammal",
+    "canFly": false,
+    "width": 18,
+    "height": 30,
+    "color": "#FFD700",
+    "personality": "tall, gentle, graceful",
+    "behavior": {
+      "defaultSpeed": 1.1,
+      "flySpeed": 0,
+      "idleWanderRange": 100,
+      "fidgetChance": 0.3
+    }
+  },
+  {
+    "id": "elephant",
+    "name": "Elephant",
+    "emoji": "🐘",
+    "category": "mammal",
+    "canFly": false,
+    "width": 26,
+    "height": 24,
+    "color": "#808080",
+    "personality": "wise, strong, intelligent",
+    "behavior": {
+      "defaultSpeed": 0.9,
+      "flySpeed": 0,
+      "idleWanderRange": 100,
+      "fidgetChance": 0.25
+    }
+  },
+  {
+    "id": "rhinoceros",
+    "name": "Rhinoceros",
+    "emoji": "🦏",
+    "category": "mammal",
+    "canFly": false,
+    "width": 28,
+    "height": 22,
+    "color": "#A9A9A9",
+    "personality": "tough, powerful, determined",
+    "behavior": {
+      "defaultSpeed": 1.0,
+      "flySpeed": 0,
+      "idleWanderRange": 105,
+      "fidgetChance": 0.3
+    }
+  },
+  {
+    "id": "hippo",
+    "name": "Hippopotamus",
+    "emoji": "🦛",
+    "category": "mammal",
+    "canFly": false,
+    "width": 28,
+    "height": 20,
+    "color": "#708090",
+    "personality": "heavy, powerful, lazy",
+    "behavior": {
+      "defaultSpeed": 0.7,
+      "flySpeed": 0,
+      "idleWanderRange": 80,
+      "fidgetChance": 0.2
+    }
+  },
+  {
+    "id": "crocodile",
+    "name": "Crocodile",
+    "emoji": "🐊",
+    "category": "reptile",
+    "canFly": false,
+    "width": 30,
+    "height": 16,
+    "color": "#2F4F4F",
+    "personality": "dangerous, ancient, lurking",
+    "behavior": {
+      "defaultSpeed": 1.1,
+      "flySpeed": 0,
+      "idleWanderRange": 120,
+      "fidgetChance": 0.25
+    }
+  },
+  {
+    "id": "snake",
+    "name": "Snake",
+    "emoji": "🐍",
+    "category": "reptile",
+    "canFly": false,
+    "width": 28,
+    "height": 12,
+    "color": "#228B22",
+    "personality": "sly, slithering, mysterious",
+    "behavior": {
+      "defaultSpeed": 1.3,
+      "flySpeed": 0,
+      "idleWanderRange": 100,
+      "fidgetChance": 0.35
+    }
+  },
+  {
+    "id": "butterfly",
+    "name": "Butterfly",
+    "emoji": "🦋",
+    "category": "insect",
+    "canFly": true,
+    "width": 18,
+    "height": 16,
+    "color": "#FF69B4",
+    "personality": "delicate, colorful, graceful",
+    "behavior": {
+      "defaultSpeed": 1.5,
+      "flySpeed": 2.6,
+      "idleWanderRange": 90,
+      "fidgetChance": 0.85
+    }
+  },
+  {
+    "id": "bee",
+    "name": "Honeybee",
+    "emoji": "🐝",
+    "category": "insect",
+    "canFly": true,
+    "width": 14,
+    "height": 14,
+    "color": "#FFD700",
+    "personality": "busy, productive, sweet",
+    "behavior": {
+      "defaultSpeed": 1.9,
+      "flySpeed": 3.1,
+      "idleWanderRange": 85,
+      "fidgetChance": 0.9
+    }
+  },
+  {
+    "id": "dragonfly",
+    "name": "Dragonfly",
+    "emoji": "🐛",
+    "category": "insect",
+    "canFly": true,
+    "width": 16,
+    "height": 18,
+    "color": "#00CED1",
+    "personality": "swift, acrobatic, agile",
+    "behavior": {
+      "defaultSpeed": 2.1,
+      "flySpeed": 3.3,
+      "idleWanderRange": 100,
+      "fidgetChance": 0.88
+    }
+  },
+  {
+    "id": "parrot",
+    "name": "Parrot",
+    "emoji": "🦜",
+    "category": "bird",
+    "canFly": true,
+    "width": 20,
+    "height": 22,
+    "color": "#FF6347",
+    "personality": "vocal, colorful, clever",
+    "behavior": {
+      "defaultSpeed": 1.5,
+      "flySpeed": 2.7,
+      "idleWanderRange": 105,
+      "fidgetChance": 0.72
+    }
+  },
+  {
+    "id": "peacock",
+    "name": "Peacock",
+    "emoji": "🦚",
+    "category": "bird",
+    "canFly": true,
+    "width": 26,
+    "height": 26,
+    "color": "#20B2AA",
+    "personality": "vain, beautiful, proud",
+    "behavior": {
+      "defaultSpeed": 1.2,
+      "flySpeed": 2.4,
+      "idleWanderRange": 115,
+      "fidgetChance": 0.5
+    }
+  },
+  {
+    "id": "flamingo",
+    "name": "Flamingo",
+    "emoji": "🦩",
+    "category": "bird",
+    "canFly": true,
+    "width": 18,
+    "height": 26,
+    "color": "#FF1493",
+    "personality": "elegant, pink, social",
+    "behavior": {
+      "defaultSpeed": 1.3,
+      "flySpeed": 2.5,
+      "idleWanderRange": 110,
+      "fidgetChance": 0.6
+    }
+  },
+  {
+    "id": "swan",
+    "name": "Swan",
+    "emoji": "🦢",
+    "category": "bird",
+    "canFly": true,
+    "width": 22,
+    "height": 24,
+    "color": "#FFFFFF",
+    "personality": "graceful, elegant, serene",
+    "behavior": {
+      "defaultSpeed": 1.2,
+      "flySpeed": 2.3,
+      "idleWanderRange": 100,
+      "fidgetChance": 0.35
+    }
+  },
+  {
+    "id": "puffin",
+    "name": "Puffin",
+    "emoji": "🐦",
+    "category": "bird",
+    "canFly": true,
+    "width": 18,
+    "height": 20,
+    "color": "#FF8C00",
+    "personality": "cute, colorful, comical",
+    "behavior": {
+      "defaultSpeed": 1.4,
+      "flySpeed": 2.4,
+      "idleWanderRange": 95,
+      "fidgetChance": 0.65
+    }
+  },
+  {
+    "id": "kiwi",
+    "name": "Kiwi",
+    "emoji": "🐦",
+    "category": "bird",
+    "canFly": false,
+    "width": 18,
+    "height": 20,
+    "color": "#8B4513",
+    "personality": "quirky, flightless, nocturnal",
+    "behavior": {
+      "defaultSpeed": 0.8,
+      "flySpeed": 0,
+      "idleWanderRange": 75,
+      "fidgetChance": 0.35
+    }
+  },
+  {
+    "id": "hedgehog",
+    "name": "Hedgehog",
+    "emoji": "🦔",
+    "category": "mammal",
+    "canFly": false,
+    "width": 18,
+    "height": 18,
+    "color": "#8B4513",
+    "personality": "spiky, cute, defensive",
+    "behavior": {
+      "defaultSpeed": 0.9,
+      "flySpeed": 0,
+      "idleWanderRange": 85,
+      "fidgetChance": 0.45
+    }
+  },
+  {
+    "id": "squirrel",
+    "name": "Squirrel",
+    "emoji": "🐿️",
+    "category": "mammal",
+    "canFly": false,
+    "width": 16,
+    "height": 20,
+    "color": "#CD853F",
+    "personality": "nutty, hyper, fluffy",
+    "behavior": {
+      "defaultSpeed": 1.8,
+      "flySpeed": 0,
+      "idleWanderRange": 95,
+      "fidgetChance": 0.85
+    }
+  },
+  {
+    "id": "otter",
+    "name": "Otter",
+    "emoji": "🦦",
+    "category": "mammal",
+    "canFly": false,
+    "width": 20,
+    "height": 16,
+    "color": "#654321",
+    "personality": "playful, social, cute",
+    "behavior": {
+      "defaultSpeed": 1.5,
+      "flySpeed": 0,
+      "idleWanderRange": 105,
+      "fidgetChance": 0.75
+    }
+  },
+  {
+    "id": "koala",
+    "name": "Koala",
+    "emoji": "🐨",
+    "category": "mammal",
+    "canFly": false,
+    "width": 18,
+    "height": 20,
+    "color": "#808080",
+    "personality": "sleepy, calm, cuddly",
+    "behavior": {
+      "defaultSpeed": 0.5,
+      "flySpeed": 0,
+      "idleWanderRange": 70,
+      "fidgetChance": 0.1
+    }
+  },
+  {
+    "id": "kangaroo",
+    "name": "Kangaroo",
+    "emoji": "🦘",
+    "category": "mammal",
+    "canFly": false,
+    "width": 20,
+    "height": 24,
+    "color": "#A0826D",
+    "personality": "bouncy, strong, hopping",
+    "behavior": {
+      "defaultSpeed": 1.9,
+      "flySpeed": 0,
+      "idleWanderRange": 120,
+      "fidgetChance": 0.65
+    }
+  },
+  {
+    "id": "badger",
+    "name": "Badger",
+    "emoji": "🦡",
+    "category": "mammal",
+    "canFly": false,
+    "width": 20,
+    "height": 18,
+    "color": "#000000",
+    "personality": "tough, ferocious, stubborn",
+    "behavior": {
+      "defaultSpeed": 1.2,
+      "flySpeed": 0,
+      "idleWanderRange": 95,
+      "fidgetChance": 0.4
+    }
+  },
+  {
+    "id": "seal",
+    "name": "Seal",
+    "emoji": "🦭",
+    "category": "mammal",
+    "canFly": false,
+    "width": 22,
+    "height": 18,
+    "color": "#A9A9A9",
+    "personality": "playful, intelligent, cute",
+    "behavior": {
+      "defaultSpeed": 1.3,
+      "flySpeed": 0,
+      "idleWanderRange": 110,
+      "fidgetChance": 0.6
+    }
+  },
+  {
+    "id": "walrus",
+    "name": "Walrus",
+    "emoji": "🦭",
+    "category": "mammal",
+    "canFly": false,
+    "width": 26,
+    "height": 20,
+    "color": "#C9B5A4",
+    "personality": "tusked, heavy, arctic",
+    "behavior": {
+      "defaultSpeed": 0.8,
+      "flySpeed": 0,
+      "idleWanderRange": 100,
+      "fidgetChance": 0.25
+    }
+  },
+  {
+    "id": "moose",
+    "name": "Moose",
+    "emoji": "🫎",
+    "category": "mammal",
+    "canFly": false,
+    "width": 28,
+    "height": 26,
+    "color": "#5C4033",
+    "personality": "majestic, large, northern",
+    "behavior": {
+      "defaultSpeed": 1.0,
+      "flySpeed": 0,
+      "idleWanderRange": 110,
+      "fidgetChance": 0.2
+    }
+  }
+]
