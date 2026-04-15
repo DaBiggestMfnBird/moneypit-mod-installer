@@ -38,6 +38,9 @@ const progressStatus = document.getElementById('progressStatus');
 const progressDetails = document.getElementById('progressDetails');
 const modsCarousel = document.getElementById('modsCarousel');
 const hudStat = document.getElementById('hudStat');
+const guideBtn = document.getElementById('guideBtn');
+const guideModal = document.getElementById('guideModal');
+const closeGuideBtn = document.getElementById('closeGuideBtn');
 
 // ── Initialization ──────────────────────────────────────────────────────────
 async function init() {
@@ -140,9 +143,19 @@ function renderModsCarousel(mods) {
       <div class="mod-card-meta">${mod.downloads.toLocaleString()} DL</div>
     `;
 
-    card.addEventListener('click', () => {
-      modUrlInput.value = mod.url;
-      handleUrlInstall();
+    // Click opens mod page in user's browser
+    card.addEventListener('click', async () => {
+      if (mod.url && mod.url.startsWith('http')) {
+        try {
+          // Open in default browser via IPC
+          await window.electronAPI.openModInBrowser(mod.url);
+          showNotification(`📖 Opened "${escapeHtml(mod.name)}" in your browser\n\nDownload the .zip file, then drag it here to install`, 'info');
+        } catch (err) {
+          showNotification('Could not open browser', 'error');
+        }
+      } else {
+        showNotification('Invalid mod URL', 'error');
+      }
     });
 
     modsCarousel.appendChild(card);
@@ -219,6 +232,29 @@ function setupEventListeners() {
 
   // Reset button
   resetBtn.addEventListener('click', resetUI);
+
+  // Guide modal
+  guideBtn.addEventListener('click', () => {
+    guideModal.style.display = 'flex';
+  });
+
+  closeGuideBtn.addEventListener('click', () => {
+    guideModal.style.display = 'none';
+  });
+
+  // Close guide when clicking outside modal
+  guideModal.addEventListener('click', (e) => {
+    if (e.target === guideModal) {
+      guideModal.style.display = 'none';
+    }
+  });
+
+  // Close guide with Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && guideModal.style.display !== 'none') {
+      guideModal.style.display = 'none';
+    }
+  });
 }
 
 // ── Install Handlers ────────────────────────────────────────────────────────
@@ -400,10 +436,13 @@ function showNotification(message, type = 'info', onClick) {
     zIndex: '10000',
     display: 'flex',
     gap: '10px',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
     animation: 'mpIn .22s ease',
-    cursor: onClick ? 'pointer' : 'default'
+    cursor: onClick ? 'pointer' : 'default',
+    whiteSpace: 'pre-wrap',
+    maxWidth: '400px',
+    lineHeight: '1.3'
   });
 
   if (onClick) n.addEventListener('click', () => {

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const { autoUpdater }                          = require('electron-updater');
 const path                                     = require('path');
 const fs                                       = require('fs-extra');
@@ -369,6 +369,26 @@ ipcMain.handle('search-mods', async (event, query) => {
     return { success: true, mods: [] };
   } catch (err) {
     logError('Mod search failed', err);
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('open-mod-in-browser', async (event, url) => {
+  try {
+    if (!url || !url.startsWith('http')) {
+      throw new Error('Invalid URL');
+    }
+    // Validate URL is from allowed mod hosts
+    const allowedHosts = ['beamng.com', 'worldofmods.com', 'modland.net', 'github.com'];
+    const urlObj = new URL(url);
+    const isAllowed = allowedHosts.some(host => urlObj.hostname.includes(host));
+    if (!isAllowed) {
+      throw new Error('URL not from approved mod source');
+    }
+    await shell.openExternal(url);
+    return { success: true };
+  } catch (err) {
+    logError('Failed to open mod URL', err);
     return { success: false, error: err.message };
   }
 });

@@ -23,4 +23,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Mod scraping
   fetchTopMods: (source) => ipcRenderer.invoke('fetch-top-mods', source),
   searchMods:   (query)  => ipcRenderer.invoke('search-mods', query),
+
+  // Browser integration
+  openModInBrowser: (url) => ipcRenderer.invoke('open-mod-in-browser', url),
 });

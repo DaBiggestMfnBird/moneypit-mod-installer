@@ -56,10 +56,14 @@
 
         <!-- Top Mods Section -->
         <section class="top-mods-section">
-          <h2 class="section-title">⭐ HOT MODS</h2>
+          <div class="section-header">
+            <h2 class="section-title">⭐ HOT MODS</h2>
+            <button id="guideBtn" class="guide-btn" title="How to install mods">?</button>
+          </div>
           <div class="mods-carousel" id="modsCarousel">
             <div class="carousel-loading">Loading top mods...</div>
           </div>
+          <div class="carousel-hint">Click any mod to open in your browser, download the .zip, then drag it here</div>
         </section>
 
         <!-- Install Section -->
@@ -69,7 +73,7 @@
               id="modUrl"
               type="text"
               class="install-input"
-              placeholder="Paste mod URL or drag & drop..."
+              placeholder="Paste direct .zip URL or drag & drop..."
               spellcheck="false"
             />
             <button id="pasteBtn" class="install-paste-btn" title="Paste from clipboard">📋</button>
@@ -79,8 +83,11 @@
 
         <!-- Drop Zone -->
         <div class="drop-zone" id="dropZone">
-          <div class="drop-icon">▼</div>
-          <span class="drop-text">Drop .zip files here</span>
+          <div class="drop-zone-inner">
+            <div class="drop-icon">▼</div>
+            <span class="drop-text">Drop .zip files here</span>
+            <span class="drop-hint">or click to select</span>
+          </div>
           <input type="file" id="fileInput" style="display: none;" accept=".zip" />
         </div>
 
@@ -105,6 +112,49 @@
             <h3 id="resultTitle" class="result-title">Installation Complete!</h3>
             <p id="resultMessage" class="result-message">Your mod is ready to use in BeamNG.drive</p>
             <button id="resetBtn" class="result-btn">INSTALL ANOTHER</button>
+          </div>
+        </div>
+
+        <!-- Installation Guide Modal (hidden) -->
+        <div id="guideModal" class="guide-modal" style="display: none;">
+          <div class="guide-content">
+            <div class="guide-header">
+              <h2>How to Install Mods</h2>
+              <button id="closeGuideBtn" class="close-guide-btn">✕</button>
+            </div>
+            <div class="guide-steps">
+              <div class="guide-step">
+                <div class="step-number">1</div>
+                <div class="step-text">
+                  <h3>Browse Available Mods</h3>
+                  <p>Click on any mod in the carousel to open it in your browser</p>
+                </div>
+              </div>
+              <div class="guide-step">
+                <div class="step-number">2</div>
+                <div class="step-text">
+                  <h3>Download the .zip File</h3>
+                  <p>Click the download button on the mod's page (BeamNG, WorldOfMods, or Modland). The site handles the download.</p>
+                </div>
+              </div>
+              <div class="guide-step">
+                <div class="step-number">3</div>
+                <div class="step-text">
+                  <h3>Install to MoneyPit</h3>
+                  <p>Drag the downloaded .zip file into the drop zone below, or click it to select from your downloads folder.</p>
+                </div>
+              </div>
+              <div class="guide-step">
+                <div class="step-number">4</div>
+                <div class="step-text">
+                  <h3>Done!</h3>
+                  <p>The mod is extracted and installed to your BeamNG mods folder. Start the game and enjoy!</p>
+                </div>
+              </div>
+            </div>
+            <div class="guide-note">
+              <strong>💡 Pro Tip:</strong> You can also paste a direct .zip URL from anywhere, or drag-drop files directly without using the carousel.
+            </div>
           </div>
         </div>
 
