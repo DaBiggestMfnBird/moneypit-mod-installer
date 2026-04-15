@@ -4,37 +4,44 @@
   "description": "MoneyPit Mod Installer — Easy BeamNG.drive mod installation",
   "main": "main.js",
   "scripts": {
-    "start": "electron .",
-    "build": "electron-builder --win",
-    "build:win": "electron-builder --win --x64",
-    "build:mac": "electron-builder --mac",
+    "start":       "electron .",
+    "test":        "jest",
+    "build":       "electron-builder --win",
+    "build:win":   "electron-builder --win --x64",
+    "build:mac":   "electron-builder --mac",
     "build:linux": "electron-builder --linux"
   },
   "keywords": ["beamng", "mod", "installer", "moneypit", "racing"],
   "author": "MoneyPit",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^28.0.0",
-    "electron-builder": "^24.9.1"
+    "electron":         "=28.3.3",
+    "electron-builder": "=24.13.3",
+    "jest":             "=30.3.0"
   },
   "dependencies": {
-    "axios": "^1.6.2",
-    "extract-zip": "^2.0.1",
-    "fs-extra": "^11.2.0"
+    "axios":            "=1.15.0",
+    "electron-updater": "=6.8.3",
+    "extract-zip":      "=2.0.1",
+    "fs-extra":         "=11.3.4"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": ["**/tests/**/*.test.js"]
   },
   "build": {
-    "appId": "com.moneypit.modinstaller",
+    "appId":       "com.moneypit.modinstaller",
     "productName": "MoneyPit Mod Installer",
     "directories": { "output": "dist" },
     "files": [
-      "main.js",
-      "preload.js",
-      "index.html",
-      "splash.html",
-      "styles.css",
-      "renderer.js",
-      "racer.js"
+      "main.js", "preload.js", "index.html",
+      "splash.html", "styles.css", "renderer.js", "racer.js"
     ],
+    "publish": [{
+      "provider": "github",
+      "owner":    "MoneyPit",
+      "repo":     "moneypit-mod-installer"
+    }],
     "win": {
       "target": [{ "target": "nsis", "arch": ["x64"] }],
       "requestedExecutionLevel": "asInvoker"
@@ -46,7 +53,7 @@
       "createStartMenuShortcut": true,
       "shortcutName": "MoneyPit Mod Installer"
     },
-    "mac": { "target": "dmg" },
+    "mac":   { "target": "dmg"      },
     "linux": { "target": "AppImage" }
   }
 }

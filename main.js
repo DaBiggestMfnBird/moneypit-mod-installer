@@ -1,84 +1,93 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
-const path = require('path');
-const fs = require('fs-extra');
-const axios = require('axios');
-const extractZip = require('extract-zip');
-const { URL } = require('url');
+const { autoUpdater }                          = require('electron-updater');
+const path                                     = require('path');
+const fs                                       = require('fs-extra');
+const axios                                    = require('axios');
+const extractZip                               = require('extract-zip');
+const { URL }                                  = require('url');
 
-// Max download size: 500 MB
+// ── Constants ────────────────────────────────────────────────────────────────
 const MAX_DOWNLOAD_BYTES = 500 * 1024 * 1024;
 
-// Allowed HTTPS origins for URL installs
 const ALLOWED_HOSTS = [
-  'beamng.com',
-  'www.beamng.com',
-  'worldofmods.com',
-  'www.worldofmods.com',
-  'modland.net',
-  'www.modland.net',
+  'beamng.com','www.beamng.com',
+  'worldofmods.com','www.worldofmods.com',
+  'modland.net','www.modland.net',
   'github.com',
   'objects.githubusercontent.com',
   'raw.githubusercontent.com',
   'github-releases.githubusercontent.com',
 ];
 
-let mainWindow;
-let splashWindow;
+// ── #8 File logging ──────────────────────────────────────────────────────────
+let logStream;
 
-// ---- Splash screen ----
+function initLogger() {
+  try {
+    const logDir = app.getPath('logs');
+    fs.ensureDirSync(logDir);
+    logStream = fs.createWriteStream(path.join(logDir, 'moneypit.log'), { flags: 'a' });
+    log(`MoneyPit Mod Installer started — v${app.getVersion()}`);
+  } catch (e) {
+    console.error('Logger init failed:', e);
+  }
+}
+
+function log(msg, level = 'INFO') {
+  const line = `[${new Date().toISOString()}] [${level}] ${msg}`;
+  console.log(line);
+  logStream?.write(line + '\n');
+}
+
+function logError(msg, err) {
+  log(`${msg}: ${err?.message || err}`, 'ERROR');
+  if (err?.stack) log(err.stack, 'ERROR');
+}
+
+// ── Windows ──────────────────────────────────────────────────────────────────
+let mainWindow, splashWindow;
+
 function createSplash() {
   splashWindow = new BrowserWindow({
-    width: 480,
-    height: 320,
-    frame: false,
-    transparent: false,
-    resizable: false,
-    center: true,
-    alwaysOnTop: true,
-    backgroundColor: '#05050d',
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-    },
+    width: 480, height: 320,
+    frame: false, resizable: false,
+    center: true, alwaysOnTop: true,
+    backgroundColor: '#04040c',
+    webPreferences: { nodeIntegration: false, contextIsolation: true },
   });
   splashWindow.loadFile('splash.html');
   splashWindow.on('closed', () => { splashWindow = null; });
 }
 
-// ---- Main window ----
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 900,
-    height: 750,
-    minWidth: 800,
-    minHeight: 600,
-    show: false,
-    backgroundColor: '#05050d',
-    frame: true,
-    titleBarStyle: 'default',
+    width: 900, height: 750,
+    minWidth: 800, minHeight: 600,
+    show: false, backgroundColor: '#04040c',
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
       preload: path.join(__dirname, 'preload.js'),
     },
   });
-
   mainWindow.loadFile('index.html');
-
-  // Show main window after splash (2 seconds gives boot text time to finish)
   mainWindow.once('ready-to-show', () => {
     setTimeout(() => {
-      if (splashWindow) {
-        splashWindow.close();
-      }
+      splashWindow?.close();
       mainWindow.show();
+      checkForUpdates();
     }, 2000);
   });
-
   mainWindow.on('closed', () => { mainWindow = null; });
 }
 
+// ── App lifecycle ─────────────────────────────────────────────────────────────
 app.whenReady().then(() => {
+  // #6: correct Windows taskbar identity
+  if (process.platform === 'win32') {
+    app.setAppUserModelId('com.moneypit.modinstaller');
+  }
+  initLogger();
   createSplash();
   createWindow();
 });
@@ -91,264 +100,207 @@ app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });
 
-// ---- Dynamically find latest BeamNG version folder ----
+// ── #9 Auto-updater ──────────────────────────────────────────────────────────
+function checkForUpdates() {
+  if (!app.isPackaged) { log('Update check skipped — dev mode'); return; }
+
+  autoUpdater.logger       = { info: m => log(m), error: m => log(m, 'ERROR') };
+  autoUpdater.autoDownload = false;
+
+  autoUpdater.on('update-available',    i  => { log(`Update available: v${i.version}`); mainWindow?.webContents.send('update-available', { version: i.version }); });
+  autoUpdater.on('update-not-available',()  => log('App is up to date'));
+  autoUpdater.on('error',               e  => logError('Updater error', e));
+  autoUpdater.on('download-progress',   p  => mainWindow?.webContents.send('update-progress', { percent: Math.round(p.percent) }));
+  autoUpdater.on('update-downloaded',   ()  => { log('Update ready'); mainWindow?.webContents.send('update-downloaded'); });
+
+  autoUpdater.checkForUpdates().catch(e => logError('Update check failed', e));
+}
+
+ipcMain.handle('install-update',      () => autoUpdater.downloadUpdate());
+ipcMain.handle('restart-and-install', () => autoUpdater.quitAndInstall());
+
+// ── BeamNG mods folder ───────────────────────────────────────────────────────
 function getBeamNGModsFolder() {
-  const bases = [
-    process.env.LOCALAPPDATA || '',
-    process.env.APPDATA || '',
-    process.env.HOME || '',
-  ];
+  const bases = [process.env.LOCALAPPDATA, process.env.APPDATA, process.env.HOME].filter(Boolean);
 
   for (const base of bases) {
-    if (!base) continue;
     const beamDir = path.join(base, 'BeamNG.drive');
     if (!fs.existsSync(beamDir)) continue;
-
     try {
       const versions = fs.readdirSync(beamDir)
         .filter(d => /^\d+\.\d+$/.test(d))
         .sort((a, b) => {
-          const [aMaj, aMin] = a.split('.').map(Number);
-          const [bMaj, bMin] = b.split('.').map(Number);
-          return bMaj !== aMaj ? bMaj - aMaj : bMin - aMin;
+          const [aM, am] = a.split('.').map(Number);
+          const [bM, bm] = b.split('.').map(Number);
+          return bM !== aM ? bM - aM : bm - am;
         });
-
-      if (versions.length > 0) {
-        return path.join(beamDir, versions[0], 'mods');
+      if (versions.length) {
+        const p = path.join(beamDir, versions[0], 'mods');
+        log(`Detected BeamNG mods folder: ${p}`);
+        return p;
       }
-    } catch {
-      // try next base
-    }
+    } catch (e) { logError('Version scan failed', e); }
   }
 
-  return path.join(process.env.LOCALAPPDATA || process.env.HOME || '', 'BeamNG.drive', 'mods');
+  const fallback = path.join(process.env.LOCALAPPDATA || process.env.HOME || '', 'BeamNG.drive', 'mods');
+  log(`Using fallback: ${fallback}`);
+  return fallback;
 }
 
-// ---- URL security validation ----
+// ── Security ─────────────────────────────────────────────────────────────────
 function validateUrl(rawUrl) {
   let parsed;
-  try {
-    parsed = new URL(rawUrl);
-  } catch {
-    throw new Error('Invalid URL format.');
-  }
-
-  if (parsed.protocol !== 'https:') {
-    throw new Error('Only HTTPS URLs are allowed.');
-  }
-
-  const hostname = parsed.hostname.toLowerCase();
-  const allowed = ALLOWED_HOSTS.some(h => hostname === h || hostname.endsWith('.' + h));
-  if (!allowed) {
-    throw new Error(`Downloads from "${hostname}" are not supported. Use BeamNG.com, WorldOfMods, Modland, or GitHub.`);
-  }
-
+  try { parsed = new URL(rawUrl); } catch { throw new Error('Invalid URL format.'); }
+  if (parsed.protocol !== 'https:') throw new Error('Only HTTPS URLs are allowed.');
+  const h = parsed.hostname.toLowerCase();
+  if (!ALLOWED_HOSTS.some(a => h === a || h.endsWith('.' + a)))
+    throw new Error(`Downloads from "${h}" are not supported. Use BeamNG.com, WorldOfMods, Modland, or GitHub.`);
   return parsed;
 }
 
-// ---- Path traversal guard ----
 function safeExtractPath(base, entryName) {
   const resolved = path.resolve(base, entryName);
-  if (!resolved.startsWith(path.resolve(base) + path.sep)) {
+  if (!resolved.startsWith(path.resolve(base) + path.sep))
     throw new Error(`Path traversal attempt detected: ${entryName}`);
-  }
   return resolved;
 }
 
-// ---- Extract mod name from URL ----
-function extractModName(url) {
-  try {
-    const urlObj = new URL(url);
-    const parts = urlObj.pathname.split('/').filter(p => p);
-    return parts[parts.length - 1] || 'moneypit-mod';
-  } catch {
-    return 'moneypit-mod-' + Date.now();
-  }
+// Sanitise mod name — no shell-special chars
+function sanitizeModName(raw) {
+  return raw.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80) || 'moneypit-mod';
 }
 
-// ---- Download with progress and size cap ----
+function extractModName(url) {
+  try {
+    const parts = new URL(url).pathname.split('/').filter(p => p);
+    return sanitizeModName(parts[parts.length - 1] || 'moneypit-mod');
+  } catch { return 'moneypit-mod-' + Date.now(); }
+}
+
+// ── Download ─────────────────────────────────────────────────────────────────
 async function downloadFile(url, dest, onProgress) {
-  const response = await axios({
-    url,
-    method: 'GET',
-    responseType: 'stream',
-    timeout: 120000,
-    maxRedirects: 5,
-  });
+  log(`Downloading: ${url}`);
+  const response = await axios({ url, method: 'GET', responseType: 'stream', timeout: 120000, maxRedirects: 5 });
 
-  const contentType = (response.headers['content-type'] || '').toLowerCase();
-  const isAcceptable = contentType.includes('zip')
-    || contentType.includes('octet-stream')
-    || contentType === '';
-  if (!isAcceptable) {
+  const ct = (response.headers['content-type'] || '').toLowerCase();
+  if (ct && !ct.includes('zip') && !ct.includes('octet-stream')) {
     response.data.destroy();
-    throw new Error(`Unexpected content type: "${contentType}". Only zip files are supported.`);
+    throw new Error(`Unexpected content type: "${ct}". Only zip files are supported.`);
   }
 
-  const totalSize = parseInt(response.headers['content-length'] || '0', 10);
-  if (totalSize > MAX_DOWNLOAD_BYTES) {
-    response.data.destroy();
-    throw new Error('File exceeds the 500 MB size limit.');
-  }
+  const total = parseInt(response.headers['content-length'] || '0', 10);
+  if (total > MAX_DOWNLOAD_BYTES) { response.data.destroy(); throw new Error('File exceeds the 500 MB size limit.'); }
 
-  let downloadedSize = 0;
-
+  let downloaded = 0;
   return new Promise((resolve, reject) => {
     const writer = fs.createWriteStream(dest);
-
-    response.data.on('data', (chunk) => {
-      downloadedSize += chunk.length;
-      if (downloadedSize > MAX_DOWNLOAD_BYTES) {
-        writer.destroy();
-        response.data.destroy();
-        reject(new Error('File exceeded 500 MB size limit during download.'));
-        return;
-      }
-      if (totalSize > 0 && onProgress) {
-        onProgress((downloadedSize / totalSize) * 100);
-      }
+    response.data.on('data', chunk => {
+      downloaded += chunk.length;
+      if (downloaded > MAX_DOWNLOAD_BYTES) { writer.destroy(); response.data.destroy(); reject(new Error('File exceeded 500 MB limit.')); return; }
+      if (total > 0 && onProgress) onProgress((downloaded / total) * 100);
     });
-
     response.data.pipe(writer);
     writer.on('finish', resolve);
-    writer.on('error', reject);
+    writer.on('error',  reject);
     response.data.on('error', reject);
   });
 }
 
-// ---- Copy mod files from extracted dir to mods folder (with path guard) ----
+// ── Install ───────────────────────────────────────────────────────────────────
+async function findModFiles(dir) {
+  const r = [], entries = await fs.readdir(dir, { withFileTypes: true });
+  for (const e of entries) {
+    const full = path.join(dir, e.name);
+    if (e.isDirectory()) r.push(...await findModFiles(full));
+    else if (e.name.endsWith('.zip') || e.name.endsWith('.car')) r.push(full);
+  }
+  return r;
+}
+
 async function installExtractedMods(extractDir, modsFolder) {
   const modFiles = await findModFiles(extractDir);
-
   if (modFiles.length === 0) {
-    const files = await fs.readdir(extractDir);
-    for (const file of files) {
-      const srcPath = path.join(extractDir, file);
-      const stat = await fs.stat(srcPath);
-      if (stat.isDirectory()) {
-        await fs.copy(srcPath, safeExtractPath(modsFolder, file));
-      } else if (file.endsWith('.zip') || file.endsWith('.car')) {
-        await fs.copy(srcPath, safeExtractPath(modsFolder, file));
-      }
+    for (const file of await fs.readdir(extractDir)) {
+      const src = path.join(extractDir, file), stat = await fs.stat(src);
+      if (stat.isDirectory() || file.endsWith('.zip') || file.endsWith('.car'))
+        await fs.copy(src, safeExtractPath(modsFolder, file));
     }
   } else {
-    for (const modFile of modFiles) {
-      await fs.copy(modFile, safeExtractPath(modsFolder, path.basename(modFile)));
-    }
+    for (const f of modFiles)
+      await fs.copy(f, safeExtractPath(modsFolder, path.basename(f)));
   }
 }
 
-async function findModFiles(dir) {
-  const modFiles = [];
-  const entries = await fs.readdir(dir, { withFileTypes: true });
-  for (const entry of entries) {
-    const fullPath = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      modFiles.push(...await findModFiles(fullPath));
-    } else if (entry.name.endsWith('.zip') || entry.name.endsWith('.car')) {
-      modFiles.push(fullPath);
-    }
-  }
-  return modFiles;
-}
-
-// ---- IPC: select mods folder ----
+// ── IPC ───────────────────────────────────────────────────────────────────────
 ipcMain.handle('select-beamng-folder', async () => {
-  const result = await dialog.showOpenDialog(mainWindow, {
-    properties: ['openDirectory'],
-  });
-  if (!result.canceled && result.filePaths.length > 0) return result.filePaths[0];
-  return null;
+  const r = await dialog.showOpenDialog(mainWindow, { properties: ['openDirectory'] });
+  return (!r.canceled && r.filePaths.length) ? r.filePaths[0] : null;
 });
 
-// ---- IPC: install from URL ----
 ipcMain.handle('install-mod', async (event, { url, modsFolder }) => {
-  let tempDir = null;
+  let tmp = null;
   try {
     validateUrl(url);
-
-    const modName = extractModName(url);
-    tempDir = path.join(app.getPath('temp'), 'moneypit-mod-installer', Date.now() + '-' + modName);
-
-    await fs.ensureDir(tempDir);
-    await fs.ensureDir(modsFolder);
+    const name = extractModName(url);
+    log(`URL install: ${url} → ${modsFolder}`);
+    tmp = path.join(app.getPath('temp'), 'moneypit', Date.now() + '-' + name);
+    await fs.ensureDir(tmp); await fs.ensureDir(modsFolder);
 
     event.sender.send('install-progress', { status: 'downloading', progress: 0 });
-
-    const zipPath = path.join(tempDir, 'mod.zip');
-    await downloadFile(url, zipPath, (progress) => {
-      event.sender.send('install-progress', { status: 'downloading', progress });
-    });
+    const zip = path.join(tmp, 'mod.zip');
+    await downloadFile(url, zip, p => event.sender.send('install-progress', { status: 'downloading', progress: p }));
 
     event.sender.send('install-progress', { status: 'extracting', progress: 50 });
-
-    const extractDir = path.join(tempDir, 'extracted');
-    await fs.ensureDir(extractDir);
-    await extractZip(zipPath, { dir: path.resolve(extractDir) });
+    const ext = path.join(tmp, 'extracted');
+    await fs.ensureDir(ext);
+    await extractZip(zip, { dir: path.resolve(ext) });
 
     event.sender.send('install-progress', { status: 'installing', progress: 75 });
+    await installExtractedMods(ext, modsFolder);
 
-    await installExtractedMods(extractDir, modsFolder);
-
+    log(`Installed: ${name}`);
     event.sender.send('install-progress', { status: 'completed', progress: 100 });
-    return { success: true, message: `Mod "${modName}" installed successfully!` };
-
-  } catch (error) {
-    console.error('URL install error:', error);
-    return { success: false, message: error.message };
-  } finally {
-    if (tempDir) fs.remove(tempDir).catch(() => {});
-  }
+    return { success: true, message: `Mod "${name}" installed successfully!` };
+  } catch (err) {
+    logError('URL install failed', err);
+    return { success: false, message: err.message };
+  } finally { if (tmp) fs.remove(tmp).catch(e => logError('Temp cleanup', e)); }
 });
 
-// ---- IPC: install from local .zip file (drag & drop) ----
 ipcMain.handle('install-mod-file', async (event, { filePath, modsFolder }) => {
-  let tempDir = null;
+  let tmp = null;
   try {
-    const resolvedPath = path.resolve(filePath);
-
-    if (!resolvedPath.endsWith('.zip')) throw new Error('Only .zip mod files are supported.');
-    if (!fs.existsSync(resolvedPath)) throw new Error('File not found.');
-
-    const stat = await fs.stat(resolvedPath);
+    const resolved = path.resolve(filePath);
+    if (!resolved.endsWith('.zip'))     throw new Error('Only .zip mod files are supported.');
+    if (!fs.existsSync(resolved))       throw new Error('File not found.');
+    const stat = await fs.stat(resolved);
     if (stat.size > MAX_DOWNLOAD_BYTES) throw new Error('File exceeds the 500 MB size limit.');
 
-    const modName = path.basename(resolvedPath, '.zip');
-    tempDir = path.join(app.getPath('temp'), 'moneypit-mod-installer', Date.now() + '-' + modName);
-
-    await fs.ensureDir(tempDir);
-    await fs.ensureDir(modsFolder);
+    const name = sanitizeModName(path.basename(resolved, '.zip'));
+    log(`File install: ${resolved} → ${modsFolder}`);
+    tmp = path.join(app.getPath('temp'), 'moneypit', Date.now() + '-' + name);
+    await fs.ensureDir(tmp); await fs.ensureDir(modsFolder);
 
     event.sender.send('install-progress', { status: 'extracting', progress: 0 });
-
-    const extractDir = path.join(tempDir, 'extracted');
-    await fs.ensureDir(extractDir);
-    await extractZip(resolvedPath, { dir: path.resolve(extractDir) });
+    const ext = path.join(tmp, 'extracted');
+    await fs.ensureDir(ext);
+    await extractZip(resolved, { dir: path.resolve(ext) });
 
     event.sender.send('install-progress', { status: 'installing', progress: 75 });
+    await installExtractedMods(ext, modsFolder);
 
-    await installExtractedMods(extractDir, modsFolder);
-
+    log(`Installed from file: ${name}`);
     event.sender.send('install-progress', { status: 'completed', progress: 100 });
-    return { success: true, message: `Mod "${modName}" installed successfully!` };
-
-  } catch (error) {
-    console.error('File install error:', error);
-    return { success: false, message: error.message };
-  } finally {
-    if (tempDir) fs.remove(tempDir).catch(() => {});
-  }
+    return { success: true, message: `Mod "${name}" installed successfully!` };
+  } catch (err) {
+    logError('File install failed', err);
+    return { success: false, message: err.message };
+  } finally { if (tmp) fs.remove(tmp).catch(e => logError('Temp cleanup', e)); }
 });
 
-// ---- IPC: default mods folder ----
 ipcMain.handle('get-default-mods-folder', () => getBeamNGModsFolder());
 
-// ---- IPC: validate mods folder ----
 ipcMain.handle('validate-mods-folder', async (event, folderPath) => {
-  try {
-    const exists = await fs.pathExists(folderPath);
-    return { valid: exists, exists };
-  } catch {
-    return { valid: false, exists: false };
-  }
+  try { return { valid: await fs.pathExists(folderPath), exists: true }; }
+  catch { return { valid: false, exists: false }; }
 });

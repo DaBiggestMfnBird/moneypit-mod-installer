@@ -3,3 +3,9 @@ dist/
 *.log
 .DS_Store
 Thumbs.db
+
+# Nested duplicate from npm prefix mishap
+beamng-mod-installer/
+
+# Build output
+dist/

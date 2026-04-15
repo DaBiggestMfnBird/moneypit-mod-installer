@@ -1,315 +1,254 @@
-// DOM Elements
-const modUrlInput = document.getElementById('modUrl');
-const pasteBtn = document.getElementById('pasteBtn');
-const modsFolderInput = document.getElementById('modsFolder');
-const browseBtn = document.getElementById('browseBtn');
-const installBtn = document.getElementById('installBtn');
-const folderStatus = document.getElementById('folderStatus');
-const progressSection = document.getElementById('progressSection');
-const progressFill = document.getElementById('progressFill');
-const progressPercent = document.getElementById('progressPercent');
-const progressStatus = document.getElementById('progressStatus');
-const progressDetails = document.getElementById('progressDetails');
-const resultSection = document.getElementById('resultSection');
-const resultCard = document.getElementById('resultCard');
-const resultTitle = document.getElementById('resultTitle');
-const resultMessage = document.getElementById('resultMessage');
-const resetBtn = document.getElementById('resetBtn');
+// #2 — Error boundary: guard against preload failure
+if (typeof window.electronAPI === 'undefined') {
+  document.body.innerHTML = `
+    <div style="font-family:monospace;color:#ff4757;padding:40px;background:#04040c;height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;">
+      <div style="font-size:1.4rem;font-weight:700;">SYSTEM ERROR</div>
+      <div style="color:#888;font-size:.9rem;">Preload bridge failed to initialize.<br>Try restarting the application.</div>
+    </div>`;
+  throw new Error('electronAPI not available — preload failed');
+}
 
-// Drag & drop
-const dropZone = document.getElementById('dropZone');
-const dropOverlay = document.getElementById('dropOverlay');
-const browseFileBtn = document.getElementById('browseFileBtn');
-const fileInput = document.getElementById('fileInput');
+// ── DOM refs ──────────────────────────────────────────────────────────────────
+const modUrlInput    = document.getElementById('modUrl');
+const pasteBtn       = document.getElementById('pasteBtn');
+const modsFolderInput= document.getElementById('modsFolder');
+const browseBtn      = document.getElementById('browseBtn');
+const installBtn     = document.getElementById('installBtn');
+const folderStatus   = document.getElementById('folderStatus');
+const progressSection= document.getElementById('progressSection');
+const progressFill   = document.getElementById('progressFill');
+const progressPercent= document.getElementById('progressPercent');
+const progressStatus = document.getElementById('progressStatus');
+const progressDetails= document.getElementById('progressDetails');
+const resultSection  = document.getElementById('resultSection');
+const resultCard     = document.getElementById('resultCard');
+const resultTitle    = document.getElementById('resultTitle');
+const resultMessage  = document.getElementById('resultMessage');
+const resetBtn       = document.getElementById('resetBtn');
+const dropZone       = document.getElementById('dropZone');
+const dropOverlay    = document.getElementById('dropOverlay');
+const browseFileBtn  = document.getElementById('browseFileBtn');
+const fileInput      = document.getElementById('fileInput');
+const hudStat        = document.getElementById('hudStat');
 
 let modsFolder = '';
 
+// ── Init ──────────────────────────────────────────────────────────────────────
 async function init() {
   const defaultFolder = await window.electronAPI.getDefaultModsFolder();
   modsFolderInput.value = defaultFolder;
-  modsFolder = defaultFolder;
+  modsFolder            = defaultFolder;
   validateFolder(defaultFolder);
   setupEventListeners();
+  setupUpdateListeners();
+  pulseHud();
 }
 
+// ── HUD readout cycling ───────────────────────────────────────────────────────
+function pulseHud() {
+  const msgs = ['SYS ONLINE', 'MODS READY', 'PIT CREW ACTIVE', 'ALL CLEAR'];
+  let i = 0;
+  setInterval(() => {
+    if (!hudStat) return;
+    hudStat.style.opacity = '0';
+    setTimeout(() => {
+      hudStat.textContent  = msgs[i++ % msgs.length];
+      hudStat.style.opacity = '1';
+    }, 300);
+  }, 4000);
+}
+
+// ── Auto-updater UI ───────────────────────────────────────────────────────────
+function setupUpdateListeners() {
+  window.electronAPI.onUpdateAvailable(({ version }) => {
+    showNotification(`Update v${version} available — click to download`, 'info', () => {
+      window.electronAPI.installUpdate();
+    });
+  });
+
+  window.electronAPI.onUpdateDownloaded(() => {
+    showNotification('Update ready — click to restart and install', 'info', () => {
+      window.electronAPI.restartAndInstall();
+    });
+  });
+}
+
+// ── Event listeners ───────────────────────────────────────────────────────────
 function setupEventListeners() {
-  // Paste URL
   pasteBtn.addEventListener('click', async () => {
     try {
-      const text = await navigator.clipboard.readText();
-      modUrlInput.value = text;
+      modUrlInput.value = await navigator.clipboard.readText();
       modUrlInput.focus();
-    } catch (err) {
-      console.error('Failed to paste:', err);
-    }
+    } catch {}
   });
 
-  // Browse mods folder
   browseBtn.addEventListener('click', async () => {
     const selected = await window.electronAPI.selectBeamngFolder();
-    if (selected) {
-      modsFolderInput.value = selected;
-      modsFolder = selected;
-      validateFolder(selected);
-    }
+    if (selected) { modsFolderInput.value = selected; modsFolder = selected; validateFolder(selected); }
   });
 
-  // URL install button
   installBtn.addEventListener('click', handleUrlInstall);
-
-  // Reset
   resetBtn.addEventListener('click', resetUI);
 
-  // URL validation highlight
   modUrlInput.addEventListener('input', () => {
     const url = modUrlInput.value.trim();
     modUrlInput.style.borderColor = url
       ? (isValidUrl(url) ? 'var(--success)' : 'var(--error)')
       : 'var(--border)';
   });
-
-  modUrlInput.addEventListener('keypress', (e) => {
+  modUrlInput.addEventListener('keypress', e => {
     if (e.key === 'Enter' && modUrlInput.value.trim()) handleUrlInstall();
   });
 
-  // --- Drag & Drop ---
-  // Prevent browser default for drag events on the whole window
-  window.addEventListener('dragover', (e) => e.preventDefault());
-  window.addEventListener('drop', (e) => e.preventDefault());
+  // Drag & drop
+  window.addEventListener('dragover', e => e.preventDefault());
+  window.addEventListener('drop',     e => e.preventDefault());
 
-  dropZone.addEventListener('dragenter', (e) => {
-    e.preventDefault();
-    dropOverlay.classList.add('active');
-  });
-
-  dropZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    dropOverlay.classList.add('active');
-  });
-
-  dropZone.addEventListener('dragleave', (e) => {
-    if (!dropZone.contains(e.relatedTarget)) {
-      dropOverlay.classList.remove('active');
-    }
-  });
-
-  dropZone.addEventListener('drop', (e) => {
+  dropZone.addEventListener('dragenter', e => { e.preventDefault(); dropOverlay.classList.add('active'); });
+  dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropOverlay.classList.add('active'); });
+  dropZone.addEventListener('dragleave', e => { if (!dropZone.contains(e.relatedTarget)) dropOverlay.classList.remove('active'); });
+  dropZone.addEventListener('drop', e => {
     e.preventDefault();
     dropOverlay.classList.remove('active');
+    // #5: guard file.path (Electron-specific) with fallback
     const file = e.dataTransfer.files[0];
     if (file) handleFileInstall(file);
   });
 
-  // Browse local file button
   browseFileBtn.addEventListener('click', () => fileInput.click());
-
-  fileInput.addEventListener('change', () => {
-    if (fileInput.files[0]) handleFileInstall(fileInput.files[0]);
-  });
+  fileInput.addEventListener('change', () => { if (fileInput.files[0]) handleFileInstall(fileInput.files[0]); });
 }
 
-function isValidUrl(string) {
-  try {
-    new URL(string);
-    return true;
-  } catch (_) {
-    return false;
-  }
-}
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function isValidUrl(s) { try { new URL(s); return true; } catch { return false; } }
 
-async function validateFolder(folderPath) {
-  const result = await window.electronAPI.validateModsFolder(folderPath);
-
-  if (result.valid) {
-    folderStatus.innerHTML = `
-      <span class="status-dot"></span>
-      <span class="status-text">Ready to install</span>
-    `;
-    folderStatus.style.borderColor = 'rgba(0, 255, 136, 0.3)';
-    folderStatus.style.background = 'rgba(0, 255, 136, 0.1)';
+async function validateFolder(p) {
+  const r = await window.electronAPI.validateModsFolder(p);
+  if (r.valid) {
+    folderStatus.innerHTML = `<span class="status-dot"></span><span class="status-text">Ready to install</span>`;
+    folderStatus.style.borderColor = 'rgba(0,255,136,0.3)';
+    folderStatus.style.background  = 'rgba(0,255,136,0.08)';
   } else {
-    folderStatus.innerHTML = `
-      <span class="status-dot" style="background: var(--error); animation: none;"></span>
-      <span class="status-text" style="color: var(--error);">Folder not found</span>
-    `;
-    folderStatus.style.borderColor = 'rgba(255, 71, 87, 0.3)';
-    folderStatus.style.background = 'rgba(255, 71, 87, 0.1)';
+    folderStatus.innerHTML = `<span class="status-dot" style="background:var(--error);animation:none;"></span><span class="status-text" style="color:var(--error);">Folder not found</span>`;
+    folderStatus.style.borderColor = 'rgba(255,71,87,0.3)';
+    folderStatus.style.background  = 'rgba(255,71,87,0.06)';
   }
 }
 
 function setInstalling(yes) {
-  installBtn.disabled = yes;
-  installBtn.style.opacity = yes ? '0.5' : '1';
-  browseFileBtn.disabled = yes;
-  dropZone.style.pointerEvents = yes ? 'none' : '';
-  dropZone.style.opacity = yes ? '0.5' : '1';
+  installBtn.disabled            = yes;
+  installBtn.style.opacity       = yes ? '0.45' : '1';
+  browseFileBtn.disabled         = yes;
+  dropZone.style.pointerEvents   = yes ? 'none'  : '';
+  dropZone.style.opacity         = yes ? '0.4'   : '1';
 }
 
+// ── Install from URL ──────────────────────────────────────────────────────────
 async function handleUrlInstall() {
   const url = modUrlInput.value.trim();
-
-  if (!url) {
-    showNotification('Please paste a mod URL first!', 'error');
-    modUrlInput.focus();
-    return;
-  }
-
-  if (!isValidUrl(url)) {
-    showNotification('Please enter a valid URL!', 'error');
-    return;
-  }
-
-  if (!modsFolder) {
-    showNotification('Please select your BeamNG mods folder!', 'error');
-    return;
-  }
+  if (!url)            { showNotification('Paste a mod URL first!', 'error'); modUrlInput.focus(); return; }
+  if (!isValidUrl(url)){ showNotification('That URL looks wrong.', 'error'); return; }
+  if (!modsFolder)     { showNotification('Select your BeamNG mods folder first!', 'error'); return; }
 
   setInstalling(true);
   progressSection.style.display = 'block';
-  resultSection.style.display = 'none';
-
+  resultSection.style.display   = 'none';
   window.electronAPI.onInstallProgress(updateProgress);
 
   try {
     const result = await window.electronAPI.installMod({ url, modsFolder });
     result.success ? showSuccess(result.message) : showError(result.message);
-  } catch (error) {
-    showError(error.message);
-  } finally {
-    setInstalling(false);
-  }
+  } catch (e) { showError(e.message); }
+  finally     { setInstalling(false); }
 }
 
+// ── Install from file ─────────────────────────────────────────────────────────
 async function handleFileInstall(file) {
-  if (!file.name.endsWith('.zip')) {
-    showNotification('Only .zip mod files are supported!', 'error');
-    return;
-  }
+  if (!file.name.endsWith('.zip')) { showNotification('Only .zip mod files are supported!', 'error'); return; }
+  if (!modsFolder)                 { showNotification('Select your BeamNG mods folder first!', 'error'); return; }
 
-  if (!modsFolder) {
-    showNotification('Please select your BeamNG mods folder!', 'error');
-    return;
-  }
+  // #5: file.path is Electron-only. Guard with a clear message if absent.
+  const filePath = file.path;
+  if (!filePath) { showNotification('Could not read file path. Try Browse instead.', 'error'); return; }
 
   setInstalling(true);
   progressSection.style.display = 'block';
-  resultSection.style.display = 'none';
-
+  resultSection.style.display   = 'none';
   window.electronAPI.onInstallProgress(updateProgress);
 
   try {
-    const result = await window.electronAPI.installModFile({ filePath: file.path, modsFolder });
+    const result = await window.electronAPI.installModFile({ filePath, modsFolder });
     result.success ? showSuccess(result.message) : showError(result.message);
-  } catch (error) {
-    showError(error.message);
-  } finally {
-    setInstalling(false);
-    fileInput.value = '';
-  }
+  } catch (e) { showError(e.message); }
+  finally     { setInstalling(false); fileInput.value = ''; }
 }
 
-function updateProgress(data) {
-  const { status, progress } = data;
-  progressFill.style.width = `${Math.min(progress, 100)}%`;
+// ── Progress / Result ─────────────────────────────────────────────────────────
+function updateProgress({ status, progress }) {
+  progressFill.style.width    = `${Math.min(progress, 100)}%`;
   progressPercent.textContent = `${Math.round(progress)}%`;
-
-  switch (status) {
-    case 'downloading':
-      progressStatus.textContent = 'Downloading...';
-      progressDetails.textContent = `Fetching mod files (${Math.round(progress)}%)`;
-      break;
-    case 'extracting':
-      progressStatus.textContent = 'Extracting...';
-      progressDetails.textContent = 'Unpacking mod files';
-      break;
-    case 'installing':
-      progressStatus.textContent = 'Installing...';
-      progressDetails.textContent = 'Copying to mods folder';
-      break;
-    case 'completed':
-      progressStatus.textContent = 'Complete!';
-      progressDetails.textContent = 'Mod installed successfully';
-      break;
-  }
+  const map = {
+    downloading: ['Downloading...', `Fetching mod files (${Math.round(progress)}%)`],
+    extracting:  ['Extracting...',  'Unpacking mod files'],
+    installing:  ['Installing...',  'Copying to mods folder'],
+    completed:   ['Complete!',      'Mod installed successfully'],
+  };
+  const [st, det] = map[status] || ['Working...', ''];
+  progressStatus.textContent  = st;
+  progressDetails.textContent = det;
 }
 
 function showSuccess(message) {
   resultTitle.textContent = 'Installation Complete!';
   resultMessage.textContent = message || 'Your mod is ready to use in BeamNG.drive';
-  resultCard.className = 'result-card success';
-  resultCard.style.borderColor = '';
-  resultCard.style.boxShadow = '';
-  resultSection.style.display = 'block';
+  resultCard.className      = 'result-card success';
+  resultCard.style.borderColor = resultCard.style.boxShadow = '';
+  resultSection.style.display  = 'block';
   progressSection.style.display = 'none';
 }
 
 function showError(message) {
-  resultTitle.textContent = 'Installation Failed';
+  resultTitle.textContent   = 'Installation Failed';
   resultMessage.textContent = message || 'Something went wrong. Please try again.';
-  resultCard.className = 'result-card error';
-  resultCard.style.borderColor = 'var(--error)';
-  resultCard.style.boxShadow = '0 0 40px rgba(255, 71, 87, 0.2)';
-  resultSection.style.display = 'block';
+  resultCard.className      = 'result-card error';
+  resultSection.style.display  = 'block';
   progressSection.style.display = 'none';
 }
 
 function resetUI() {
-  modUrlInput.value = '';
+  modUrlInput.value             = '';
   modUrlInput.style.borderColor = 'var(--border)';
-  progressSection.style.display = 'none';
-  resultSection.style.display = 'none';
+  progressSection.style.display = resultSection.style.display = 'none';
   setInstalling(false);
-  progressFill.style.width = '0%';
+  progressFill.style.width    = '0%';
   progressPercent.textContent = '0%';
 }
 
-function showNotification(message, type = 'info') {
-  const existing = document.querySelector('.mp-notification');
-  if (existing) existing.remove();
-
-  const notification = document.createElement('div');
-  notification.className = 'mp-notification';
-  notification.innerHTML = `
-    <span>${type === 'error' ? '⚠' : 'i'}</span>
-    <span>${message}</span>
-  `;
-  notification.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 14px 22px;
-    background: ${type === 'error' ? 'rgba(255,71,87,0.92)' : 'rgba(255,107,53,0.92)'};
-    color: white;
-    border-radius: 10px;
-    font-family: 'Rajdhani', sans-serif;
-    font-weight: 600;
-    font-size: 1rem;
-    z-index: 10000;
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    animation: mpSlideIn 0.25s ease;
-  `;
-  document.body.appendChild(notification);
-
-  setTimeout(() => {
-    notification.style.animation = 'mpSlideOut 0.25s ease forwards';
-    setTimeout(() => notification.remove(), 260);
-  }, 3000);
+// ── Notification ──────────────────────────────────────────────────────────────
+function showNotification(message, type = 'info', onClick) {
+  document.querySelector('.mp-notif')?.remove();
+  const n = document.createElement('div');
+  n.className = 'mp-notif';
+  n.innerHTML = `<span>${type === 'error' ? '⚠' : '↑'}</span><span>${message}</span>`;
+  Object.assign(n.style, {
+    position: 'fixed', top: '18px', right: '18px',
+    padding: '12px 20px',
+    background: type === 'error' ? 'rgba(255,71,87,0.92)' : 'rgba(0,180,216,0.92)',
+    color: '#fff', borderRadius: '2px',
+    fontFamily: "'Rajdhani',sans-serif", fontWeight: '700', fontSize: '.95rem',
+    zIndex: '10000', display: 'flex', gap: '10px', alignItems: 'center',
+    boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+    animation: 'mpIn .22s ease', cursor: onClick ? 'pointer' : 'default',
+  });
+  if (onClick) n.addEventListener('click', () => { n.remove(); onClick(); });
+  document.body.appendChild(n);
+  setTimeout(() => { n.style.animation = 'mpOut .22s ease forwards'; setTimeout(() => n.remove(), 240); }, 4000);
 }
 
-// Notification animations
 const style = document.createElement('style');
 style.textContent = `
-  @keyframes mpSlideIn {
-    from { transform: translateX(110%); opacity: 0; }
-    to   { transform: translateX(0);    opacity: 1; }
-  }
-  @keyframes mpSlideOut {
-    from { transform: translateX(0);    opacity: 1; }
-    to   { transform: translateX(110%); opacity: 0; }
-  }
+  @keyframes mpIn  { from{transform:translateX(110%);opacity:0} to{transform:translateX(0);opacity:1} }
+  @keyframes mpOut { from{transform:translateX(0);opacity:1} to{transform:translateX(110%);opacity:0} }
 `;
 document.head.appendChild(style);
 
