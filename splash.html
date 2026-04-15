@@ -7,249 +7,412 @@
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
+
     body {
-      background:#05050d; color:#e8e8f0;
-      font-family:'Rajdhani',sans-serif;
-      width:100vw; height:100vh;
-      display:flex; flex-direction:column;
-      align-items:center; justify-content:center;
-      overflow:hidden; user-select:none;
+      background: #04040c; color: #e0e0f0;
+      font-family: 'Rajdhani', sans-serif;
+      width: 100vw; height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      overflow: hidden; user-select: none;
     }
+
+    /* CRT scanlines */
     body::after {
-      content:''; position:fixed; inset:0;
-      background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0,rgba(0,0,0,.18) 1px,transparent 1px,transparent 3px);
-      pointer-events:none; z-index:999;
+      content: ''; position: fixed; inset: 0;
+      background: repeating-linear-gradient(
+        0deg, rgba(0,0,0,0.14) 0, rgba(0,0,0,0.14) 1px,
+        transparent 1px, transparent 4px
+      );
+      pointer-events: none; z-index: 9999;
     }
-    body::before {
-      content:''; position:fixed; inset:0;
-      background-image:
-        linear-gradient(rgba(0,180,216,.04) 1px,transparent 1px),
-        linear-gradient(90deg,rgba(0,180,216,.04) 1px,transparent 1px);
-      background-size:40px 40px; pointer-events:none;
+
+    /* Perspective grid floor */
+    .grid-floor {
+      position: fixed; bottom: 0; left: 0; right: 0; height: 45%;
+      background:
+        linear-gradient(rgba(0,180,216,0.0) 0%, rgba(0,180,216,0.06) 100%),
+        repeating-linear-gradient(90deg,
+          transparent 0, transparent calc(100%/12 - 1px),
+          rgba(0,180,216,0.08) calc(100%/12 - 1px),
+          rgba(0,180,216,0.08) calc(100%/12)
+        );
+      pointer-events: none;
+      transform-origin: bottom center;
+      transform: perspective(220px) rotateX(32deg);
     }
-    .corner { position:fixed; width:22px; height:22px; border-color:rgba(0,180,216,.4); border-style:solid; }
-    .corner-tl{top:12px;left:12px;border-width:2px 0 0 2px}
-    .corner-tr{top:12px;right:12px;border-width:2px 2px 0 0}
-    .corner-bl{bottom:12px;left:12px;border-width:0 0 2px 2px}
-    .corner-br{bottom:12px;right:12px;border-width:0 2px 2px 0}
-    .orb{position:fixed;border-radius:50%;filter:blur(80px);pointer-events:none;}
-    .orb1{width:340px;height:340px;background:#ff6b35;top:-150px;right:-80px;opacity:.18;}
-    .orb2{width:260px;height:260px;background:#00b4d8;bottom:-100px;left:-60px;opacity:.16;}
-    .logo-ring {
-      width:110px; height:110px; border:3px solid #ff6b35; border-radius:50%;
-      display:flex; align-items:center; justify-content:center;
-      box-shadow:0 0 30px rgba(255,107,53,.4),0 0 60px rgba(255,107,53,.12);
-      margin-bottom:20px; animation:pulse 2s ease-in-out infinite; position:relative;
+
+    /* Glow orbs */
+    .orb { position: fixed; border-radius: 50%; filter: blur(90px); pointer-events: none; }
+    .o1 { width:380px;height:380px;background:#ff6b35;top:-160px;right:-100px;opacity:.18; }
+    .o2 { width:280px;height:280px;background:#00b4d8;bottom:-100px;left:-60px;opacity:.16; }
+
+    /* HUD corners */
+    .hud { position: fixed; width: 28px; height: 28px;
+      border-color: rgba(0,180,216,0.45); border-style: solid; }
+    .hud.tl { top:10px;left:10px; border-width:2px 0 0 2px; }
+    .hud.tr { top:10px;right:10px; border-width:2px 2px 0 0; }
+    .hud.bl { bottom:10px;left:10px; border-width:0 0 2px 2px; }
+    .hud.br { bottom:10px;right:10px; border-width:0 2px 2px 0; }
+
+    /* Arc reactor */
+    .arc {
+      position: fixed; bottom: 14px; right: 14px;
+      width: 26px; height: 26px; border-radius: 50%;
+      background: radial-gradient(circle, #48cae4 25%, transparent 70%);
+      box-shadow: 0 0 10px #00b4d8, 0 0 22px rgba(0,180,216,0.4);
+      animation: arcP 2.2s ease-in-out infinite;
     }
-    .logo-ring::before {
-      content:''; position:absolute; inset:6px; border-radius:50%;
-      border:1px solid rgba(0,180,216,.4);
+    @keyframes arcP { 0%,100%{opacity:1;}50%{opacity:.45;} }
+
+    /* Eagle canvas — full screen */
+    #eagleCanvas {
+      position: fixed; inset: 0;
+      width: 100vw; height: 100vh;
+      pointer-events: none; z-index: 500;
+      image-rendering: pixelated;
     }
-    @keyframes pulse {
-      0%,100%{box-shadow:0 0 30px rgba(255,107,53,.4),0 0 60px rgba(255,107,53,.12);}
-      50%    {box-shadow:0 0 50px rgba(255,107,53,.6),0 0 80px rgba(255,107,53,.2);}
+
+    /* Center content */
+    .center {
+      display: flex; flex-direction: column;
+      align-items: center; position: relative; z-index: 10;
     }
-    .mp-letters {
-      font-family:'Orbitron',sans-serif; font-size:2.4rem; font-weight:900;
-      color:#ffd700; text-shadow:0 0 20px rgba(255,215,0,.5);
+
+    /* MP ring logo */
+    .ring {
+      width: 108px; height: 108px;
+      border: 3px solid #ff6b35; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      position: relative; margin-bottom: 18px;
+      box-shadow:
+        0 0 0 1px rgba(255,107,53,0.15),
+        0 0 30px rgba(255,107,53,0.45),
+        0 0 70px rgba(255,107,53,0.12);
+      animation: ringPulse 2s ease-in-out infinite;
     }
+    .ring::before {
+      content: ''; position: absolute; inset: 7px;
+      border-radius: 50%; border: 1px solid rgba(0,180,216,0.35);
+    }
+    @keyframes ringPulse {
+      0%,100% { box-shadow: 0 0 30px rgba(255,107,53,.45), 0 0 70px rgba(255,107,53,.12); }
+      50%      { box-shadow: 0 0 50px rgba(255,107,53,.7), 0 0 100px rgba(255,107,53,.2); }
+    }
+
+    .mp {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2.6rem; font-weight: 900;
+      color: #ffd700;
+      text-shadow: 0 0 24px rgba(255,215,0,.55);
+    }
+
     h1 {
-      font-family:'Orbitron',sans-serif; font-size:2rem; font-weight:900;
-      letter-spacing:6px; margin-bottom:4px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2.1rem; font-weight: 900;
+      letter-spacing: 7px; margin-bottom: 5px;
     }
-    .money{color:#ff6b35} .pit{color:#ffd700}
-    .tagline{font-size:.75rem;letter-spacing:8px;color:#00b4d8;text-transform:uppercase;margin-bottom:36px;}
-    .boot-lines {
-      font-family:'Rajdhani',monospace; font-size:.8rem; color:#4a4a6a;
-      letter-spacing:1px; text-align:left; width:280px; min-height:80px; margin-bottom:20px;
+    .m { color: #ff6b35; }
+    .p { color: #ffd700; }
+
+    .tag {
+      font-size: 0.68rem; letter-spacing: 10px;
+      color: #00b4d8; text-transform: uppercase;
+      margin-bottom: 32px;
     }
-    .boot-line{animation:fadeIn .3s ease forwards;opacity:0;}
-    @keyframes fadeIn{to{opacity:1}}
-    .boot-ok{color:#00ff88}
-    .load-bar-wrap{width:280px;height:6px;background:#1e1e38;border-radius:2px;overflow:hidden;margin-bottom:12px;}
-    .load-bar{height:100%;width:0%;background:linear-gradient(90deg,#ff6b35,#ffd700);border-radius:2px;box-shadow:0 0 8px rgba(255,107,53,.6);transition:width .3s ease;}
-    .load-label{font-family:'Orbitron',sans-serif;font-size:.65rem;letter-spacing:3px;color:#ff6b35;text-align:center;animation:blink 1s step-start infinite;}
-    @keyframes blink{50%{opacity:0}}
-    /* Eagle canvas — full screen overlay, z below scanlines */
-    #eagleCanvas{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:500;image-rendering:pixelated;}
-    .arc{position:fixed;bottom:14px;right:14px;width:28px;height:28px;border-radius:50%;background:radial-gradient(circle,#48cae4 30%,transparent 70%);box-shadow:0 0 10px #00b4d8,0 0 20px rgba(0,180,216,.4);animation:arcPulse 2.4s ease-in-out infinite;}
-    @keyframes arcPulse{0%,100%{opacity:1;box-shadow:0 0 10px #00b4d8,0 0 22px rgba(0,180,216,.4);}50%{opacity:.5;box-shadow:0 0 5px #00b4d8,0 0 10px rgba(0,180,216,.2);}}
-    .version{position:fixed;bottom:14px;left:0;right:0;text-align:center;font-size:.65rem;color:#2a2a4a;letter-spacing:2px;}
+
+    /* Boot lines */
+    .boot {
+      font-family: 'Rajdhani', monospace;
+      font-size: 0.78rem; color: #3a3a60;
+      letter-spacing: 1px; text-align: left;
+      width: 300px; min-height: 88px; margin-bottom: 20px;
+    }
+    .bl-line { opacity: 0; animation: bFadeIn .25s ease forwards; }
+    @keyframes bFadeIn { to { opacity: 1; } }
+    .ok { color: #00ff88; }
+
+    /* Fuel gauge bar */
+    .gauge-wrap {
+      width: 300px; margin-bottom: 10px;
+    }
+    .gauge-label {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.55rem; letter-spacing: 3px; color: #ff6b35;
+      display: flex; justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .gauge-track {
+      height: 8px; background: #12122a; position: relative;
+      overflow: hidden;
+    }
+    /* Tick marks */
+    .gauge-track::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(
+        90deg, transparent 0, transparent 9.9%,
+        rgba(4,4,12,.7) 9.9%, rgba(4,4,12,.7) 10%
+      );
+      z-index: 2; pointer-events: none;
+    }
+    .gauge-fill {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, #00b4d8, #ff6b35, #ffd700);
+      transition: width .28s ease;
+      box-shadow: 0 0 10px rgba(255,107,53,.7);
+      position: relative; z-index: 1;
+    }
+
+    .status-txt {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.58rem; letter-spacing: 4px;
+      color: #ff6b35; text-align: center;
+      animation: blink 1s step-start infinite;
+      margin-top: 6px;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .version {
+      position: fixed; bottom: 12px; left: 0; right: 0;
+      text-align: center;
+      font-size: 0.6rem; color: #1e1e40; letter-spacing: 2px;
+    }
   </style>
 </head>
 <body>
-  <div class="orb orb1"></div>
-  <div class="orb orb2"></div>
-  <div class="corner corner-tl"></div>
-  <div class="corner corner-tr"></div>
-  <div class="corner corner-bl"></div>
-  <div class="corner corner-br"></div>
+  <div class="grid-floor"></div>
+  <div class="orb o1"></div>
+  <div class="orb o2"></div>
+  <div class="hud tl"></div><div class="hud tr"></div>
+  <div class="hud bl"></div><div class="hud br"></div>
   <div class="arc"></div>
 
-  <!-- 8-bit flapping eagle drifts across the full screen -->
+  <!-- 8-bit flapping eagle swoops across the splash -->
   <canvas id="eagleCanvas"></canvas>
 
-  <div class="logo-ring"><span class="mp-letters">MP</span></div>
-  <h1><span class="money">MONEY</span><span class="pit">PIT</span></h1>
-  <p class="tagline">Mod Installer</p>
+  <div class="center">
+    <div class="ring"><span class="mp">MP</span></div>
+    <h1><span class="m">MONEY</span><span class="p">PIT</span></h1>
+    <p class="tag">Mod Installer</p>
 
-  <div class="boot-lines" id="bootLines"></div>
-  <div class="load-bar-wrap"><div class="load-bar" id="loadBar"></div></div>
-  <div class="load-label" id="loadLabel">LOADING...</div>
+    <div class="boot" id="bootEl"></div>
 
-  <div class="version">v1.0.0 &nbsp;|&nbsp; MoneyPit</div>
+    <div class="gauge-wrap">
+      <div class="gauge-label">
+        <span>SYSTEM INIT</span>
+        <span id="pctTxt">0%</span>
+      </div>
+      <div class="gauge-track">
+        <div class="gauge-fill" id="gaugeFill"></div>
+      </div>
+    </div>
+    <div class="status-txt" id="statusTxt">LOADING...</div>
+  </div>
+
+  <div class="version">v1.0.0 &nbsp;·&nbsp; MoneyPit &nbsp;·&nbsp; Not affiliated with BeamNG GmbH</div>
 
   <script>
-    /* ---- Boot sequence ---- */
-    const BOOT = [
-      { t:100,  text:'> Initializing MoneyPit Engine...',  ok:true  },
-      { t:450,  text:'> Scanning mod registry...',         ok:true  },
-      { t:800,  text:'> Loading race protocols...',        ok:true  },
-      { t:1150, text:'> Connecting to pit crew...',        ok:true  },
-      { t:1550, text:'> System ready.',                    ok:false },
+  /* ---- Boot sequence ---- */
+  const LINES = [
+    { t:100,  tx:'> MoneyPit Engine v1.0.0 detected',  ok:true  },
+    { t:420,  tx:'> Loading mod registry...',           ok:true  },
+    { t:740,  tx:'> Race protocols initialized',        ok:true  },
+    { t:1060, tx:'> Pit crew standing by...',           ok:true  },
+    { t:1440, tx:'> All systems go. Welcome to the pit.',ok:false },
+  ];
+  const BARS = [
+    {t:180,p:18},{t:550,p:46},{t:870,p:65},{t:1200,p:84},{t:1600,p:100}
+  ];
+  const bootEl   = document.getElementById('bootEl');
+  const fill     = document.getElementById('gaugeFill');
+  const pctTxt   = document.getElementById('pctTxt');
+  const statusTxt= document.getElementById('statusTxt');
+
+  LINES.forEach(({t,tx,ok}) => setTimeout(() => {
+    const d = document.createElement('div');
+    d.className = 'bl-line';
+    d.innerHTML = ok
+      ? `${tx} <span class="ok">[OK]</span>`
+      : `<span style="color:#ffd700;font-weight:700">${tx}</span>`;
+    bootEl.appendChild(d);
+    bootEl.scrollTop = bootEl.scrollHeight;
+  }, t));
+
+  BARS.forEach(({t,p}) => setTimeout(() => {
+    fill.style.width = p + '%';
+    pctTxt.textContent = p + '%';
+    if (p === 100) statusTxt.textContent = 'READY';
+  }, t));
+
+  /* ================================================================
+     8-BIT FLAPPING EAGLE — dramatic swoop path
+     Enters bottom-left, swoops up in a banking arc across the center,
+     drifts right, then exits top-right. Loops with variation.
+     ================================================================ */
+  (function () {
+    const canvas = document.getElementById('eagleCanvas');
+    const ctx    = canvas.getContext('2d');
+    const S = 5; // pixel scale
+
+    /* Pixel art eagle — 2 wing frames
+       1=dark brown, 2=mid brown, 3=cream/white head, 4=yellow beak,
+       5=dark eye, 6=white chest, 7=wing tip dark */
+    const FRAMES = [
+      // Wings spread UP
+      [
+        [0,0,2,2,2,0,0,0,0,2,2,2,0,0],
+        [0,2,2,2,2,2,1,1,2,2,2,2,2,0],
+        [2,2,2,1,1,3,3,5,3,1,1,2,2,2],
+        [7,2,1,1,1,3,4,1,3,1,1,2,7,0],
+        [0,1,1,1,1,1,1,1,1,1,1,1,0,0],
+        [0,0,1,6,1,1,1,1,1,6,1,0,0,0],
+        [0,0,0,4,0,0,6,6,0,4,0,0,0,0],
+      ],
+      // Wings swept DOWN
+      [
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,2,2,1,1,1,2,2,0,0,0,0],
+        [0,0,2,2,1,3,3,5,3,1,2,2,0,0],
+        [0,2,2,1,1,3,4,1,3,1,1,2,2,0],
+        [2,2,1,1,1,1,1,1,1,1,1,1,2,2],
+        [0,1,1,6,1,1,1,1,1,6,1,1,0,0],
+        [0,0,0,4,0,0,6,6,0,4,0,0,0,0],
+      ],
     ];
-    const PROGRESS = [
-      {t:200,p:15},{t:600,p:45},{t:950,p:68},{t:1300,p:85},{t:1750,p:100}
-    ];
-    const bootEl = document.getElementById('bootLines');
-    const barEl  = document.getElementById('loadBar');
-    const lblEl  = document.getElementById('loadLabel');
-    BOOT.forEach(({t,text,ok}) => setTimeout(() => {
-      const d = document.createElement('div');
-      d.className = 'boot-line';
-      d.innerHTML = ok ? `${text} <span class="boot-ok">[OK]</span>` : `<span style="color:#ffd700">${text}</span>`;
-      bootEl.appendChild(d);
-    }, t));
-    PROGRESS.forEach(({t,p}) => setTimeout(() => {
-      barEl.style.width = p+'%';
-      if(p===100) lblEl.textContent='READY';
-    }, t));
 
-    /* ================================================================
-       8-BIT FLAPPING EAGLE — pixel art drawn via canvas, drifts + bobs
-       ================================================================ */
-    (function(){
-      const canvas = document.getElementById('eagleCanvas');
-      const ctx    = canvas.getContext('2d');
-      const S      = 5; // scale: each "pixel" = 5 real px
+    const PAL = {
+      1:'#5c3d1e', 2:'#8b5e3c', 3:'#f2ede6',
+      4:'#ffd700', 5:'#12122a', 6:'#f5f0ea', 7:'#3d2810',
+    };
 
-      /* Eagle sprite — two frames (wings up / wings down)
-         Colours:
-           1 = dark brown body  #5c3d1e
-           2 = light brown wing #8b5e3c
-           3 = white head       #f0ede8
-           4 = yellow beak/feet #ffd700
-           5 = dark eye         #1a1a2e
-           6 = orange-white tip #ffb347
-      */
-      const FRAMES = [
-        // Frame A — wings spread wide
-        [
-          [0,0,2,2,0,0,0,0,0,2,2,0,0],
-          [0,2,2,2,1,1,1,1,1,2,2,2,0],
-          [2,2,2,1,1,3,3,5,1,1,2,2,2],
-          [0,2,1,1,1,3,4,1,1,1,2,2,0],
-          [0,0,1,1,1,1,1,1,1,1,1,0,0],
-          [0,0,0,1,1,1,1,1,1,0,0,0,0],
-          [0,0,0,0,4,0,0,0,4,0,0,0,0],
-        ],
-        // Frame B — wings tucked
-        [
-          [0,0,0,0,0,0,0,0,0,0,0,0,0],
-          [0,0,2,2,1,1,1,1,2,2,0,0,0],
-          [0,2,2,1,1,3,3,5,1,1,2,2,0],
-          [2,2,1,1,1,3,4,1,1,1,1,2,2],
-          [0,2,1,1,1,1,1,1,1,1,1,2,0],
-          [0,0,1,1,1,1,1,1,1,1,0,0,0],
-          [0,0,0,0,4,0,0,0,4,0,0,0,0],
-        ],
-      ];
+    const COLS = FRAMES[0][0].length;
+    const ROWS = FRAMES[0].length;
+    const EW   = COLS * S;
+    const EH   = ROWS * S;
 
-      const PALETTE = {
-        1:'#5c3d1e', 2:'#8b5e3c', 3:'#f0ede8',
-        4:'#ffd700', 5:'#1a1a2e', 6:'#ffb347',
-      };
+    function resize() {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+      resetEagle();
+    }
 
-      const COL = FRAMES[0][0].length;
-      const ROW = FRAMES[0].length;
-      const W   = COL * S;
-      const H   = ROW * S;
+    /* Bezier swoop path control points (normalised 0-1, resolved at draw time) */
+    let pathT   = 0;      // 0 → 1 along bezier
+    let pathSpd = 0.004;  // speed along path
 
-      function resize() {
-        canvas.width  = window.innerWidth;
-        canvas.height = window.innerHeight;
+    let p0, p1, p2, p3;  // bezier control points (actual px)
+    let prevX = 0, prevY = 0;
+
+    function resetEagle() {
+      const W = canvas.width, H = canvas.height;
+      // Start: bottom-left area
+      p0 = { x: -EW - 20,          y: H * 0.85 };
+      // Control 1: sweep up
+      p1 = { x: W * 0.25,          y: H * 0.1  };
+      // Control 2: bank across
+      p2 = { x: W * 0.65,          y: H * 0.35 };
+      // End: exit top-right
+      p3 = { x: W + EW + 20,       y: H * 0.15 };
+      pathT   = 0;
+      pathSpd = 0.003 + Math.random() * 0.002;
+      prevX   = p0.x;
+      prevY   = p0.y;
+    }
+
+    function bezier(t, a, b, c, d) {
+      const u = 1 - t;
+      return u*u*u*a + 3*u*u*t*b + 3*u*t*t*c + t*t*t*d;
+    }
+
+    function drawEagle(x, y, frame, angle, flipX) {
+      ctx.save();
+      ctx.translate(x + EW/2, y + EH/2);
+      ctx.rotate(angle);
+      if (flipX) ctx.scale(-1, 1);
+      ctx.translate(-EW/2, -EH/2);
+      FRAMES[frame].forEach((row, ry) => {
+        row.forEach((cell, rx) => {
+          if (!cell || cell === 0) return;
+          ctx.fillStyle = PAL[cell] || cell;
+          ctx.fillRect(rx*S, ry*S, S, S);
+        });
+      });
+      ctx.restore();
+    }
+
+    /* Feather trail */
+    const feathers = [];
+    let lastFeather = 0;
+
+    function spawnFeather(x, y) {
+      feathers.push({
+        x, y,
+        vx: (Math.random() - 0.6) * 1.2,
+        vy: 0.3 + Math.random() * 0.8,
+        rot: Math.random() * Math.PI * 2,
+        rotV: (Math.random() - 0.5) * 0.12,
+        life: 1.0,
+        size: 3 + Math.random() * 5,
+      });
+    }
+
+    let frame = 0, frameTimer = 0;
+    const FLAP_RATE = 8;
+
+    function tick(now) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Bezier position
+      const ex = bezier(pathT, p0.x, p1.x, p2.x, p3.x);
+      const ey = bezier(pathT, p0.y, p1.y, p2.y, p3.y);
+
+      // Angle = direction of travel
+      const dx = ex - prevX;
+      const dy = ey - prevY;
+      const angle = Math.atan2(dy, dx);
+
+      prevX = ex; prevY = ey;
+
+      // Flip horizontal if going left (shouldn't happen on this path, but guard)
+      const flipX = dx < 0;
+
+      // Flap
+      frameTimer++;
+      if (frameTimer >= FLAP_RATE) { frame = (frame + 1) % 2; frameTimer = 0; }
+
+      // Feather trail
+      if (now - lastFeather > 80) {
+        spawnFeather(ex + EW/2, ey + EH/2);
+        lastFeather = now;
       }
 
-      // Eagle state — starts off left edge
-      const eagle = {
-        x: -W - 20,
-        y: 80,
-        vx: 1.6,           // drift speed (horizontal)
-        vy: 0,
-        bobAmp: 18,        // vertical bob amplitude
-        bobFreq: 0.04,     // bob frequency
-        drift: 0.3,        // slight downward drift
-        frame: 0,
-        frameTimer: 0,
-        flapRate: 10,      // frames between flap toggle
-        angle: 0,          // slight rotation for drift feel
-        age: 0,
-      };
-
-      function drawEagle(x, y, frame, angle) {
+      // Draw feathers
+      for (let i = feathers.length - 1; i >= 0; i--) {
+        const f = feathers[i];
+        f.x += f.vx; f.y += f.vy; f.rot += f.rotV; f.life -= 0.022;
+        if (f.life <= 0) { feathers.splice(i, 1); continue; }
         ctx.save();
-        ctx.translate(x + W/2, y + H/2);
-        ctx.rotate(angle);
-        ctx.translate(-W/2, -H/2);
-        const sprite = FRAMES[frame];
-        sprite.forEach((row, ry) => {
-          row.forEach((cell, rx) => {
-            if (!cell) return;
-            ctx.fillStyle = PALETTE[cell];
-            ctx.fillRect(rx*S, ry*S, S, S);
-          });
-        });
+        ctx.globalAlpha = f.life * 0.55;
+        ctx.translate(f.x, f.y); ctx.rotate(f.rot);
+        ctx.fillStyle = '#8b5e3c';
+        ctx.fillRect(-f.size/2, -1, f.size, 2);
         ctx.restore();
       }
 
-      function tick() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // Draw eagle
+      drawEagle(ex, ey, frame, angle, flipX);
 
-        eagle.age++;
-        eagle.frameTimer++;
+      pathT += pathSpd;
+      if (pathT >= 1) resetEagle();
 
-        // Flap
-        if (eagle.frameTimer >= eagle.flapRate) {
-          eagle.frame = (eagle.frame + 1) % 2;
-          eagle.frameTimer = 0;
-        }
-
-        // Bob vertically
-        const bob = Math.sin(eagle.age * eagle.bobFreq) * eagle.bobAmp;
-
-        // Slight angle that follows vertical velocity
-        eagle.angle = Math.sin(eagle.age * eagle.bobFreq) * 0.08;
-
-        // Move
-        eagle.x += eagle.vx;
-
-        const drawY = eagle.y + bob;
-
-        drawEagle(eagle.x, drawY, eagle.frame, eagle.angle);
-
-        // Reset when off right edge
-        if (eagle.x > canvas.width + W + 20) {
-          eagle.x = -W - 20;
-          eagle.y = 60 + Math.random() * (canvas.height * 0.4);
-        }
-
-        requestAnimationFrame(tick);
-      }
-
-      window.addEventListener('resize', resize);
-      resize();
       requestAnimationFrame(tick);
-    })();
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+    requestAnimationFrame(tick);
+  })();
   </script>
 </body>
 </html>

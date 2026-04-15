@@ -9,13 +9,50 @@
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <!-- PS2-style scanlines handled via CSS body::after -->
 
-  <!-- Stark Industries arc reactor glow (bottom right) -->
+  <!-- Stark arc reactor -->
   <div class="arc-reactor"></div>
 
-  <!-- 8-bit pixel racer canvas — runs along the bottom -->
+  <!-- 2-car pixel racer strip -->
   <canvas id="pixelRacer"></canvas>
+
+  <!-- World race locations ticker -->
+  <div class="race-ticker">
+    <div class="ticker-label">LIVE TRACK</div>
+    <div class="ticker-track">
+      <div class="ticker-scroll">
+        <span class="ticker-item">Tokyo, Japan</span>
+        <span class="ticker-item">Dubai, UAE</span>
+        <span class="ticker-item">São Paulo, Brazil</span>
+        <span class="ticker-item">Los Angeles, USA</span>
+        <span class="ticker-item">Nürburgring, Germany</span>
+        <span class="ticker-item">Monaco, France</span>
+        <span class="ticker-item">Melbourne, Australia</span>
+        <span class="ticker-item">Silverstone, UK</span>
+        <span class="ticker-item">Monza, Italy</span>
+        <span class="ticker-item">Singapore</span>
+        <span class="ticker-item">Suzuka, Japan</span>
+        <span class="ticker-item">Mexico City, Mexico</span>
+        <span class="ticker-item">Miami, USA</span>
+        <span class="ticker-item">Spa-Francorchamps, Belgium</span>
+        <!-- duplicate for seamless loop -->
+        <span class="ticker-item">Tokyo, Japan</span>
+        <span class="ticker-item">Dubai, UAE</span>
+        <span class="ticker-item">São Paulo, Brazil</span>
+        <span class="ticker-item">Los Angeles, USA</span>
+        <span class="ticker-item">Nürburgring, Germany</span>
+        <span class="ticker-item">Monaco, France</span>
+        <span class="ticker-item">Melbourne, Australia</span>
+        <span class="ticker-item">Silverstone, UK</span>
+        <span class="ticker-item">Monza, Italy</span>
+        <span class="ticker-item">Singapore</span>
+        <span class="ticker-item">Suzuka, Japan</span>
+        <span class="ticker-item">Mexico City, Mexico</span>
+        <span class="ticker-item">Miami, USA</span>
+        <span class="ticker-item">Spa-Francorchamps, Belgium</span>
+      </div>
+    </div>
+  </div>
 
   <div class="background-grid"></div>
   <div class="glow-orbs">
@@ -25,11 +62,20 @@
   </div>
 
   <div class="container">
+
+    <!-- HEADER -->
     <header class="header">
       <div class="logo-container">
         <div class="logo-icon">
           <svg viewBox="0 0 100 100" class="logo-svg">
+            <defs>
+              <filter id="chrome">
+                <feGaussianBlur stdDeviation="1" result="blur"/>
+                <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+              </filter>
+            </defs>
             <circle cx="50" cy="50" r="45" class="logo-ring"/>
+            <circle cx="50" cy="50" r="38" fill="none" stroke="rgba(0,180,216,0.2)" stroke-width="1"/>
             <text x="50" y="62" text-anchor="middle" class="logo-mp-text">MP</text>
           </svg>
         </div>
@@ -40,8 +86,11 @@
           <p class="subtitle">MOD INSTALLER</p>
         </div>
       </div>
-      <div class="header-badge">
-        <span class="badge-text">EASY MODE</span>
+      <div class="header-right">
+        <div class="header-badge">
+          <span class="badge-text">EASY MODE</span>
+        </div>
+        <div class="hud-stat" id="hudStat">SYS ONLINE</div>
       </div>
     </header>
 
@@ -49,6 +98,8 @@
 
       <!-- Paste URL -->
       <section class="card input-section">
+        <div class="card-corner tl"></div><div class="card-corner tr"></div>
+        <div class="card-corner bl"></div><div class="card-corner br"></div>
         <div class="card-header">
           <div class="section-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -60,7 +111,7 @@
         <div class="url-input-container">
           <div class="input-wrapper">
             <input type="text" id="modUrl" class="url-input" placeholder="Paste your mod URL here..." autocomplete="off">
-            <button class="paste-btn" id="pasteBtn" title="Paste from clipboard">
+            <button class="paste-btn" id="pasteBtn">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
               </svg>
@@ -82,6 +133,8 @@
 
       <!-- Drag & Drop -->
       <section class="card drop-section" id="dropSection">
+        <div class="card-corner tl"></div><div class="card-corner tr"></div>
+        <div class="card-corner bl"></div><div class="card-corner br"></div>
         <div class="drop-zone" id="dropZone">
           <div class="drop-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -89,18 +142,18 @@
             </svg>
           </div>
           <p class="drop-title">Drop .zip mod file here</p>
-          <p class="drop-subtitle">or drag a file from your downloads</p>
+          <p class="drop-subtitle">Drag straight from your downloads</p>
           <div class="drop-divider"><span>OR</span></div>
           <button class="browse-file-btn" id="browseFileBtn">Browse File</button>
           <input type="file" id="fileInput" accept=".zip" style="display:none;">
         </div>
-        <div class="drop-active-overlay" id="dropOverlay">
-          <p>Release to install!</p>
-        </div>
+        <div class="drop-active-overlay" id="dropOverlay">Release to Install</div>
       </section>
 
       <!-- Mods Folder -->
       <section class="card folder-section">
+        <div class="card-corner tl"></div><div class="card-corner tr"></div>
+        <div class="card-corner bl"></div><div class="card-corner br"></div>
         <div class="card-header">
           <div class="section-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -124,8 +177,10 @@
         </div>
       </section>
 
-      <!-- Install Button -->
+      <!-- Install -->
       <section class="card install-section">
+        <div class="card-corner tl"></div><div class="card-corner tr"></div>
+        <div class="card-corner bl"></div><div class="card-corner br"></div>
         <button class="install-btn" id="installBtn">
           <div class="btn-content">
             <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -138,7 +193,7 @@
       </section>
 
       <!-- Progress -->
-      <section class="progress-section" id="progressSection" style="display: none;">
+      <section class="progress-section" id="progressSection" style="display:none;">
         <div class="progress-card">
           <div class="progress-header">
             <div class="spinner"></div>
@@ -155,7 +210,7 @@
       </section>
 
       <!-- Result -->
-      <section class="result-section" id="resultSection" style="display: none;">
+      <section class="result-section" id="resultSection" style="display:none;">
         <div class="result-card success" id="resultCard">
           <div class="result-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
