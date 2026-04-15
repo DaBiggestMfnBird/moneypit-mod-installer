@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com;">
+  <title>MoneyPit Mod Installer</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- PS2-style scanlines handled via CSS body::after -->
+
+  <!-- Stark Industries arc reactor glow (bottom right) -->
+  <div class="arc-reactor"></div>
+
+  <!-- 8-bit pixel racer canvas — runs along the bottom -->
+  <canvas id="pixelRacer"></canvas>
+
+  <div class="background-grid"></div>
+  <div class="glow-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <div class="container">
+    <header class="header">
+      <div class="logo-container">
+        <div class="logo-icon">
+          <svg viewBox="0 0 100 100" class="logo-svg">
+            <circle cx="50" cy="50" r="45" class="logo-ring"/>
+            <text x="50" y="62" text-anchor="middle" class="logo-mp-text">MP</text>
+          </svg>
+        </div>
+        <div class="title-group">
+          <h1 class="main-title">
+            <span class="title-money">MONEY</span><span class="title-pit">PIT</span>
+          </h1>
+          <p class="subtitle">MOD INSTALLER</p>
+        </div>
+      </div>
+      <div class="header-badge">
+        <span class="badge-text">EASY MODE</span>
+      </div>
+    </header>
+
+    <main class="main-content">
+
+      <!-- Paste URL -->
+      <section class="card input-section">
+        <div class="card-header">
+          <div class="section-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+            </svg>
+          </div>
+          <h2>Paste Mod Link</h2>
+        </div>
+        <div class="url-input-container">
+          <div class="input-wrapper">
+            <input type="text" id="modUrl" class="url-input" placeholder="Paste your mod URL here..." autocomplete="off">
+            <button class="paste-btn" id="pasteBtn" title="Paste from clipboard">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
+              </svg>
+              <span>Paste</span>
+            </button>
+          </div>
+          <div class="supported-sites">
+            <span class="supported-label">Supports:</span>
+            <div class="site-badges">
+              <span class="site-badge official">BeamNG.com</span>
+              <span class="site-badge worldofmods">WorldOfMods</span>
+              <span class="site-badge modland">Modland</span>
+              <span class="site-badge github">GitHub</span>
+              <span class="site-badge direct">Direct Links</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Drag & Drop -->
+      <section class="card drop-section" id="dropSection">
+        <div class="drop-zone" id="dropZone">
+          <div class="drop-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+            </svg>
+          </div>
+          <p class="drop-title">Drop .zip mod file here</p>
+          <p class="drop-subtitle">or drag a file from your downloads</p>
+          <div class="drop-divider"><span>OR</span></div>
+          <button class="browse-file-btn" id="browseFileBtn">Browse File</button>
+          <input type="file" id="fileInput" accept=".zip" style="display:none;">
+        </div>
+        <div class="drop-active-overlay" id="dropOverlay">
+          <p>Release to install!</p>
+        </div>
+      </section>
+
+      <!-- Mods Folder -->
+      <section class="card folder-section">
+        <div class="card-header">
+          <div class="section-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+            </svg>
+          </div>
+          <h2>Mods Folder</h2>
+        </div>
+        <div class="folder-path-container">
+          <input type="text" id="modsFolder" class="folder-input" readonly>
+          <button class="browse-btn" id="browseBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+            </svg>
+            Browse
+          </button>
+        </div>
+        <div class="folder-status" id="folderStatus">
+          <span class="status-dot"></span>
+          <span class="status-text">Auto-detected</span>
+        </div>
+      </section>
+
+      <!-- Install Button -->
+      <section class="card install-section">
+        <button class="install-btn" id="installBtn">
+          <div class="btn-content">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+            </svg>
+            <span class="btn-text">INSTALL MOD</span>
+          </div>
+          <div class="btn-glow"></div>
+        </button>
+      </section>
+
+      <!-- Progress -->
+      <section class="progress-section" id="progressSection" style="display: none;">
+        <div class="progress-card">
+          <div class="progress-header">
+            <div class="spinner"></div>
+            <h3 id="progressStatus">Installing...</h3>
+          </div>
+          <div class="progress-bar-container">
+            <div class="progress-bar" id="progressBar">
+              <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <span class="progress-percent" id="progressPercent">0%</span>
+          </div>
+          <div class="progress-details" id="progressDetails">Downloading mod files...</div>
+        </div>
+      </section>
+
+      <!-- Result -->
+      <section class="result-section" id="resultSection" style="display: none;">
+        <div class="result-card success" id="resultCard">
+          <div class="result-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+              <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+          </div>
+          <h3 id="resultTitle">Installation Complete!</h3>
+          <p id="resultMessage">Your mod is ready to use in BeamNG.drive</p>
+          <button class="reset-btn" id="resetBtn">Install Another Mod</button>
+        </div>
+      </section>
+
+    </main>
+
+    <footer class="footer">
+      <div class="footer-content">
+        <p class="footer-text">Built by <span class="mp-tag">MoneyPit</span> &mdash; Not affiliated with BeamNG GmbH</p>
+        <p class="footer-tip">Tip: Restart the game after installing new mods</p>
+      </div>
+    </footer>
+  </div>
+
+  <script src="renderer.js"></script>
+  <script src="racer.js"></script>
+</body>
+</html>
