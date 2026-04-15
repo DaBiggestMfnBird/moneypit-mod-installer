@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   validateModsFolder:  folder => ipcRenderer.invoke('validate-mods-folder', folder),
   installUpdate:       ()     => ipcRenderer.invoke('install-update'),
   restartAndInstall:   ()     => ipcRenderer.invoke('restart-and-install'),
+  trackEvent:          (name, props) => ipcRenderer.send('track-event', { name, props }),
 
   // #2: fixed — removes old listener before adding new (no stacking)
   onInstallProgress: (cb) => {

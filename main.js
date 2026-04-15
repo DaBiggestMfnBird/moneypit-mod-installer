@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const { autoUpdater }                          = require('electron-updater');
+const { trackEvent }                           = require('@aptabase/electron');
 const path                                     = require('path');
 const fs                                       = require('fs-extra');
 const axios                                    = require('axios');
@@ -95,6 +96,13 @@ app.whenReady().then(() => {
   initLogger();
   modScraper = new ModScraper(app);
   log('✓ ModScraper initialized');
+
+  // Track app launch
+  trackEvent('app_launched', {
+    version: app.getVersion(),
+    platform: process.platform
+  });
+
   createSplash();
   createWindow();
 });
@@ -299,9 +307,24 @@ ipcMain.handle('install-mod', async (event, { url, modsFolder }) => {
 
     log(`Installed: ${name}`);
     event.sender.send('install-progress', { status: 'completed', progress: 100 });
+
+    // Track successful mod installation
+    trackEvent('mod_installed', {
+      modName: name,
+      source: 'url',
+      success: true
+    });
+
     return { success: true, message: `Mod "${name}" installed successfully!` };
   } catch (err) {
     logError('URL install failed', err);
+
+    // Track failed mod installation
+    trackEvent('mod_install_failed', {
+      source: 'url',
+      error: err.message
+    });
+
     return { success: false, message: err.message };
   } finally { if (tmp) fs.remove(tmp).catch(e => logError('Temp cleanup', e)); }
 });
@@ -331,9 +354,24 @@ ipcMain.handle('install-mod-file', async (event, { filePath, modsFolder }) => {
 
     log(`Installed from file: ${name}`);
     event.sender.send('install-progress', { status: 'completed', progress: 100 });
+
+    // Track successful file-based mod installation
+    trackEvent('mod_installed', {
+      modName: name,
+      source: 'file',
+      success: true
+    });
+
     return { success: true, message: `Mod "${name}" installed successfully!` };
   } catch (err) {
     logError('File install failed', err);
+
+    // Track failed file-based mod installation
+    trackEvent('mod_install_failed', {
+      source: 'file',
+      error: err.message
+    });
+
     return { success: false, message: err.message };
   } finally { if (tmp) fs.remove(tmp).catch(e => logError('Temp cleanup', e)); }
 });
@@ -391,4 +429,9 @@ ipcMain.handle('open-mod-in-browser', async (event, url) => {
     logError('Failed to open mod URL', err);
     return { success: false, error: err.message };
   }
+});
+
+// ── Analytics ────────────────────────────────────────────────────────────
+ipcMain.on('track-event', (event, { name, props }) => {
+  trackEvent(name, props);
 });
