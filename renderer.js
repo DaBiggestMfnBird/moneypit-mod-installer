@@ -17,6 +17,17 @@ if (typeof window.electronAPI === 'undefined') {
   throw new Error('electronAPI not available');
 }
 
+// Safe wrapper for analytics (in case trackEvent fails)
+const trackEventSafe = (name, props) => {
+  try {
+    if (window.electronAPI?.trackEvent) {
+      trackEventSafe(name, props);
+    }
+  } catch (e) {
+    console.warn('Analytics event failed:', name, e.message);
+  }
+};
+
 // ── DOM References ──────────────────────────────────────────────────────────
 const gameCanvas = document.getElementById('gameCanvas');
 const animalGrid = document.getElementById('animalGrid');
@@ -112,17 +123,17 @@ function selectAnimal(animalId, buttonElement) {
   if (animal) {
     console.log('Selected:', animal.name);
     // Track animal selection
-    window.electronAPI.trackEvent('animal_selected', { animalId, animalName: animal.name });
+    trackEventSafe('animal_selected', { animalId, animalName: animal.name });
   }
 }
 
 // ── Top Mods ────────────────────────────────────────────────────────────────
 async function loadTopMods() {
   try {
-    window.electronAPI.trackEvent('mods_carousel_loading', { source: currentModSource });
+    trackEventSafe('mods_carousel_loading', { source: currentModSource });
     const result = await window.electronAPI.fetchTopMods(currentModSource);
     if (result.success) {
-      window.electronAPI.trackEvent('mods_carousel_loaded', {
+      trackEventSafe('mods_carousel_loaded', {
         source: currentModSource,
         modCount: result.mods.length,
         cached: result.cached
@@ -131,7 +142,7 @@ async function loadTopMods() {
     }
   } catch (err) {
     console.error('Failed to load top mods:', err);
-    window.electronAPI.trackEvent('mods_carousel_failed', {
+    trackEventSafe('mods_carousel_failed', {
       source: currentModSource,
       error: err.message
     });
@@ -240,7 +251,7 @@ function setupEventListeners() {
   // Flying toggle
   flyingToggle.addEventListener('change', (e) => {
     gameEngine.toggleFlying(e.target.checked);
-    window.electronAPI.trackEvent('flying_toggled', { enabled: e.target.checked });
+    trackEventSafe('flying_toggled', { enabled: e.target.checked });
   });
 
   // Reset button
@@ -249,7 +260,7 @@ function setupEventListeners() {
   // Guide modal
   guideBtn.addEventListener('click', () => {
     guideModal.style.display = 'flex';
-    window.electronAPI.trackEvent('guide_opened', {});
+    trackEventSafe('guide_opened', {});
   });
 
   closeGuideBtn.addEventListener('click', () => {
@@ -292,7 +303,7 @@ async function handleUrlInstall() {
   progressSection.style.display = 'block';
   resultSection.style.display = 'none';
   gameEngine.reactToEvent('install-start', 'working');
-  window.electronAPI.trackEvent('install_started', { source: 'url' });
+  trackEventSafe('install_started', { source: 'url' });
 
   // Setup progress listener
   window.electronAPI.onInstallProgress(updateProgress);
@@ -304,11 +315,11 @@ async function handleUrlInstall() {
       showSuccess(result.message);
     } else {
       showError(result.message);
-      window.electronAPI.trackEvent('install_failed', { source: 'url', error: result.message });
+      trackEventSafe('install_failed', { source: 'url', error: result.message });
     }
   } catch (err) {
     showError(err.message);
-    window.electronAPI.trackEvent('install_error', { source: 'url', error: err.message });
+    trackEventSafe('install_error', { source: 'url', error: err.message });
   } finally {
     setInstalling(false);
   }
@@ -334,7 +345,7 @@ async function handleFileInstall(file) {
   progressSection.style.display = 'block';
   resultSection.style.display = 'none';
   gameEngine.reactToEvent('install-start', 'working');
-  window.electronAPI.trackEvent('install_started', { source: 'file', fileName: file.name });
+  trackEventSafe('install_started', { source: 'file', fileName: file.name });
 
   window.electronAPI.onInstallProgress(updateProgress);
 
@@ -345,11 +356,11 @@ async function handleFileInstall(file) {
       showSuccess(result.message);
     } else {
       showError(result.message);
-      window.electronAPI.trackEvent('install_failed', { source: 'file', error: result.message });
+      trackEventSafe('install_failed', { source: 'file', error: result.message });
     }
   } catch (err) {
     showError(err.message);
-    window.electronAPI.trackEvent('install_error', { source: 'file', error: err.message });
+    trackEventSafe('install_error', { source: 'file', error: err.message });
   } finally {
     setInstalling(false);
     fileInput.value = '';

@@ -1,6 +1,5 @@
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const { autoUpdater }                          = require('electron-updater');
-const { trackEvent }                           = require('@aptabase/electron');
 const path                                     = require('path');
 const fs                                       = require('fs-extra');
 const axios                                    = require('axios');
@@ -8,6 +7,16 @@ const extractZip                               = require('extract-zip');
 const { URL }                                  = require('url');
 const crypto                                   = require('crypto');
 const { ModScraper }                           = require('./src/scraper/mod-scraper');
+
+// Safely initialize Aptabase analytics
+let trackEvent = () => {}; // fallback no-op
+try {
+  const aptabase = require('@aptabase/electron');
+  trackEvent = aptabase.trackEvent;
+} catch (e) {
+  console.warn('⚠️ Aptabase analytics unavailable:', e.message);
+  console.log('Analytics disabled but app will continue normally');
+}
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const MAX_DOWNLOAD_BYTES = 500 * 1024 * 1024;
