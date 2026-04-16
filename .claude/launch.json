@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "MoneyPit Mod Installer (Dev)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["start"],
+      "port": null
+    }
+  ]
+}

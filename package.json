@@ -80,6 +80,7 @@
       "shortcutName": "MoneyPit Mod Installer"
     },
     "mac": {
+      "icon": "src/assets/mpng-logo.png",
       "target": "dmg"
     },
     "linux": {
